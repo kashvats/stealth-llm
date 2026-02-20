@@ -1,0 +1,15 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test", "py_binary")
+
+py_library(
+    name = "stealth_pilot_lib",
+    srcs = ["stealth_pilot.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "test_stealth_pilot",
+    srcs = ["test_stealth_pilot.py"],
+    deps = [
+        ":stealth_pilot_lib",
+    ],
+)

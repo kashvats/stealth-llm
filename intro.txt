@@ -1,0 +1,4 @@
+Hey everyone, Aakash here from Delhi—backend engineer, mostly Django and Python for about 4 years now, mainly at E-Mech and Chat360.
+Recently built this robust financial archival system using Django ORM and Telegram bots for real-time alerts, handled some heavy data loads, you know?
+Super pumped to join the team and start building!
+Questions? [X]

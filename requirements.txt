@@ -1,0 +1,8 @@
+playwright
+pyperclip
+requests
+faster-whisper
+pyaudio
+numpy
+python-dotenv
+pytest
