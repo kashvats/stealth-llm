@@ -1,0 +1,19 @@
+# Setup and Run Commands for Silent Strategist
+
+# 1. Install Python dependencies
+pip install -r requirements.txt
+
+# 2. Install Playwright browsers (if using scraper)
+playwright install chromium
+
+# 3. Run the application
+python main.py
+
+# Global Hotkeys (Ctrl+Shift+):
+# Z -> Toggle live listening mode
+# X -> Close overlay immediately
+# V -> COPY-PASTE MODE (NORMAL LOCK)
+# D -> DSA MODE (NORMAL LOCK)
+# K -> ABSOLUTE LOCK MODE (BUNKER)
+# L -> Unlock (Absolute Lock only)
+# ESC ESC -> Emergency hard stop

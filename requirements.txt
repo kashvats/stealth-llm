@@ -2,7 +2,9 @@ playwright
 pyperclip
 requests
 faster-whisper
-pyaudio
+pyaudiowpatch
 numpy
 python-dotenv
 pytest
+pypdf
+pynput

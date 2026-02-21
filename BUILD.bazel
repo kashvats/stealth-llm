@@ -1,15 +1,68 @@
 load("@rules_python//python:defs.bzl", "py_library", "py_test", "py_binary")
 
 py_library(
-    name = "stealth_pilot_lib",
-    srcs = ["stealth_pilot.py"],
+    name = "lock_manager",
+    srcs = ["lock_manager.py"],
     visibility = ["//visibility:public"],
 )
 
-py_test(
-    name = "test_stealth_pilot",
-    srcs = ["test_stealth_pilot.py"],
+py_library(
+    name = "audio_transcriber",
+    srcs = ["audio_transcriber.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "overlay",
+    srcs = ["overlay.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "hotkey_listener",
+    srcs = ["hotkey_listener.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "clipboard_monitor",
+    srcs = ["clipboard_monitor.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "llm_client",
+    srcs = ["llm_client.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "main",
+    srcs = ["main.py"],
     deps = [
-        ":stealth_pilot_lib",
+        ":lock_manager",
+        ":audio_transcriber",
+        ":overlay",
+        ":hotkey_listener",
+        ":clipboard_monitor",
+        ":llm_client",
     ],
+)
+
+py_test(
+    name = "test_lock_manager",
+    srcs = ["test_lock_manager.py"],
+    deps = [":lock_manager"],
+)
+
+py_test(
+    name = "test_audio_transcriber",
+    srcs = ["test_audio_transcriber.py"],
+    deps = [":audio_transcriber"],
+)
+
+py_test(
+    name = "test_overlay_logic",
+    srcs = ["test_overlay_logic.py"],
+    deps = [":overlay"],
 )

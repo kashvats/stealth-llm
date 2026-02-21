@@ -61,6 +61,20 @@ class StealthOverlay:
         self.resize_grip.place(relx=1.0, rely=1.0, anchor='se')
         self.resize_grip.bind("<Button-1>", self._start_resize)
         self.resize_grip.bind("<B1-Motion>", self._on_resize)
+
+        # Language Indicator (Bottom Left)
+        self.lang_label = tk.Label(self.root, text="PY", bg="black", fg="#00ff00", font=("Arial", 8, "bold"))
+        self.lang_label.place(relx=0.0, rely=1.0, anchor='sw')
+        
+        # Volume Meter (Bottom Center)
+        self.meter_frame = tk.Frame(self.root, bg="#222222", height=4)
+        self.meter_frame.place(relx=0.5, rely=1.0, anchor='s', relwidth=0.6)
+        self.meter_bar = tk.Frame(self.meter_frame, bg="#00ff00", width=0, height=4)
+        self.meter_bar.place(x=0, y=0)
+
+        # Language Indicator (Bottom Left)
+        self.lang_label = tk.Label(self.root, text="PY", bg="black", fg="#00ff00", font=("Arial", 8, "bold"))
+        self.lang_label.place(relx=0.0, rely=1.0, anchor='sw')
         
         self.apply_stealth()
 
@@ -156,15 +170,47 @@ class StealthOverlay:
         elif system == "Linux":
             logger.info("Linux Stealth: Recommend sharing specific window instead of screen.")
 
-    def update_text(self, text: str):
-        if self.notepad_active:
-             return
-        self.text_area.delete(1.0, tk.END)
-        self.text_area.insert(tk.END, text)
-        self.root.update_idletasks()
+    def set_lock_indicator(self, state_name: str):
+        """Updates the lock indicator visual."""
+        if state_name == "ABSOLUTE_LOCK":
+            self.notepad_btn.config(text="BUNKER", bg="red", fg="white")
+            self.root.attributes("-alpha", 1.0) # Full opacity in bunker
+        elif state_name == "NORMAL_LOCK":
+            self.notepad_btn.config(text="LOCKED", bg="orange", fg="black")
+            self.root.attributes("-alpha", 0.9)
+        else:
+            self.notepad_btn.config(text="✎", bg="gray", fg="white")
+            self.root.attributes("-alpha", 0.8)
 
-    def update_text(self, text: str):
-        if self.notepad_active:
+    def set_language_indicator(self, lang: str):
+        """Updates the language label."""
+        if lang.upper() == "PYTHON":
+            self.lang_label.config(text="PY", fg="#00ff00")
+        else:
+            self.lang_label.config(text="AUTO", fg="#00ccff")
+
+    def update_meter(self, level: float):
+        """level: 0.0 to 1.0"""
+        base_width = self.meter_frame.winfo_width()
+        if base_width <= 1: base_width = 240 # Fallback for uninitialized window
+        width = int(level * 5.0 * base_width) # Boost level for visibility (RMS 0.2 is very loud)
+        width = min(width, base_width)
+        self.meter_bar.place_configure(width=width)
+        # Change color based on level
+        if level > 0.8: color = "red"
+        elif level > 0.4: color = "yellow"
+        else: color = "#00ff00"
+        self.meter_bar.config(bg=color)
+
+    def set_language_indicator(self, lang: str):
+        """Updates the language label."""
+        if lang.upper() == "PYTHON":
+            self.lang_label.config(text="PY", fg="#00ff00")
+        else:
+            self.lang_label.config(text="AUTO", fg="#00ccff")
+
+    def update_text(self, text: str, force: bool = False):
+        if self.notepad_active and not force:
              return
         self.text_area.delete(1.0, tk.END)
         self.text_area.insert(tk.END, text)
