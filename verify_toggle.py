@@ -6,7 +6,7 @@ import os
 
 # Mock imports
 sys.modules['tkinter'] = MagicMock()
-sys.modules['overlay'] = MagicMock()
+sys.modules['stealth_overlay_modern'] = MagicMock()
 sys.modules['clipboard_monitor'] = MagicMock()
 sys.modules['scraper'] = MagicMock()
 sys.modules['faster_whisper'] = MagicMock()

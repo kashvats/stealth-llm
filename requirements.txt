@@ -1,4 +1,3 @@
-playwright
 pyperclip
 requests
 faster-whisper
@@ -8,3 +7,6 @@ python-dotenv
 pytest
 pypdf
 pynput
+customtkinter
+darkdetect
+CTkToolTip

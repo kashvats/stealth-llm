@@ -15,7 +15,7 @@ class LockManager:
     def __init__(self, on_state_change=None):
         self.state = LockState.UNLOCKED
         self.on_state_change = on_state_change
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
 
     def set_state(self, new_state: LockState):
         with self._lock:
@@ -24,6 +24,10 @@ class LockManager:
                 self.state = new_state
                 if self.on_state_change:
                     self.on_state_change(self.state)
+
+    def get_state(self) -> LockState:
+        with self._lock:
+            return self.state
 
     def is_locked(self) -> bool:
         with self._lock:

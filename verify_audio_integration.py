@@ -6,7 +6,7 @@ import sys
 
 # Mock imports
 sys.modules['tkinter'] = MagicMock()
-sys.modules['overlay'] = MagicMock()
+sys.modules['stealth_overlay_modern'] = MagicMock()
 sys.modules['clipboard_monitor'] = MagicMock()
 sys.modules['scraper'] = MagicMock()
 sys.modules['faster_whisper'] = MagicMock()
@@ -18,7 +18,8 @@ from main import StealthPilotApp
 class TestAudioIntegration(unittest.TestCase):
     def setUp(self):
         # Patch AudioTranscriber in main to avoid starting real threads
-        with patch('main.AudioTranscriber') as MockAudioTranscriber:
+        with patch('main.AudioTranscriber') as MockAudioTranscriber, \
+             patch('main.StealthOverlayModern') as MockOverlay:
             self.app = StealthPilotApp()
             self.mock_transcriber = MockAudioTranscriber.return_value
             # Manually capture the callbacks passed to __init__
@@ -34,19 +35,20 @@ class TestAudioIntegration(unittest.TestCase):
         item = self.app.ui_queue.get()
         self.assertEqual(item, ("caption", "partial text", False))
 
-    def test_final_callback(self):
-        # Mock handle_caption_input
-        self.app.handle_caption_input = MagicMock()
+    @patch('main.threading.Timer')
+    def test_final_callback(self, mock_timer):
+        # Mock handle_question
+        self.app.handle_question = MagicMock()
         
-        # Simulate final callback
-        self.on_final("final text")
+        # Simulate final callback (Must include ? to trigger heuristic)
+        self.on_final("final text?")
         
         # Check queue
         item = self.app.ui_queue.get()
-        self.assertEqual(item, ("caption", "final text", True))
+        self.assertEqual(item, ("caption", "final text?", True))
         
         # Check trigger logic called
-        self.app.handle_caption_input.assert_called_with("final text")
+        self.app.handle_question.assert_called_with("final text?")
 
     def test_process_ui_queue(self):
         # Mock overlay
