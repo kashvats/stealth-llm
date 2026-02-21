@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class LLMClient(abc.ABC):
     @abc.abstractmethod
-    def ask(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def ask(self, prompt: str, system_prompt: Optional[str] = None, history: Optional[list] = None) -> str:
         pass
         
     def verify(self) -> bool:
@@ -17,7 +17,7 @@ class LLMClient(abc.ABC):
         return True
 
 class MockLLMClient(LLMClient):
-    def ask(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def ask(self, prompt: str, system_prompt: Optional[str] = None, history: Optional[list] = None) -> str:
         return f"Mock Answer to: {prompt[:50]}..."
 
 class OpenAIClient(LLMClient):
@@ -47,7 +47,7 @@ class OpenAIClient(LLMClient):
             logger.error(f"OpenAI Verification Error: {e}")
             return False
 
-    def ask(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def ask(self, prompt: str, system_prompt: Optional[str] = None, history: Optional[list] = None) -> str:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
@@ -56,6 +56,10 @@ class OpenAIClient(LLMClient):
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
+        
+        if history:
+            messages.extend(history)
+            
         messages.append({"role": "user", "content": prompt})
         
         data = {
@@ -100,7 +104,7 @@ class OllamaClient(LLMClient):
             logger.error(f"Ollama Verification Failed: {e}")
             return False
 
-    def ask(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def ask(self, prompt: str, system_prompt: Optional[str] = None, history: Optional[list] = None) -> str:
         # Use /api/chat which is better for chat models than /api/generate
         url = f"{self.base_url}/api/chat"
         if "/api" in self.base_url:
@@ -110,6 +114,10 @@ class OllamaClient(LLMClient):
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
+        
+        if history:
+            messages.extend(history)
+            
         messages.append({"role": "user", "content": prompt})
         
         data = {

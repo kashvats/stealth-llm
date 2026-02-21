@@ -37,12 +37,14 @@ class StealthPilotApp:
         self.ui_queue = Queue()
         
         # Audio
+        logger.info("Initializing Audio Module (Eager Loading)...")
         self.audio_transcriber = AudioTranscriber(
             model_size="tiny.en",
             on_partial=self._on_partial_speech,
             on_final=self._handle_final_speech,
             on_volume=self._on_volume
         )
+        logger.info("Audio Module Initialized.")
         
         # Hotkeys
         self.hotkeys = GlobalHotkeyListener({
@@ -53,6 +55,7 @@ class StealthPilotApp:
             'absolute_lock': lambda: self.lock_manager.set_state(LockState.ABSOLUTE_LOCK),
             'unlock': lambda: self.lock_manager.try_unlock(force=True),
             'toggle_language': self.toggle_language,
+            'toggle_clipboard': self.toggle_clipboard,
             'rescan_audio': self.rescan_audio,
             'emergency_stop': self.emergency_stop
         })
@@ -61,6 +64,9 @@ class StealthPilotApp:
         self.listening = True
         self.language = "Python"
         self.overlay.set_language_indicator(self.language)
+        self.history = []
+        self.max_history = 10 
+        self.clipboard_enabled = True
 
     def _handle_lock_change(self, state):
         self.overlay.set_lock_indicator(state.name)
@@ -82,7 +88,7 @@ class StealthPilotApp:
         self.handle_question(text)
 
     def _on_clipboard_change(self, text: str):
-        if self.lock_manager.is_locked():
+        if not self.clipboard_enabled or self.lock_manager.is_locked():
             return
         # Copy-Paste Mode usually triggered by V, but monitor can also trigger
         # unless rules state ONLY V. Plan says: Trigger: V or clipboard change.
@@ -91,12 +97,25 @@ class StealthPilotApp:
     def trigger_copy_paste(self, text: str = None):
         if not text:
             text = pyperclip.paste()
+        self.audio_transcriber.pause()
         self.lock_manager.set_state(LockState.NORMAL_LOCK)
-        self.handle_question(text)
+        
+        # Determine if it's raw data/problem statement
+        import re
+        data_pattern = r"(input|output|nums|target|arr|array)\s*="
+        if re.search(data_pattern, text.lower()):
+            prompt = f"Data pattern detected:\n\n{text}\n\nTask: Provide ONLY the Python implementation to solve this. Strictly skip all theoretical explanations, introductions, or best-practice discussions. Code only."
+        elif len(text.splitlines()) > 1:
+            prompt = f"Problem statement detected:\n\n{text}\n\nTask: Provide a professional architectural explanation followed by the Python implementation."
+        else:
+            prompt = text
+            
+        self.handle_question(prompt)
 
     def trigger_dsa_mode(self, text: str = None):
         if not text:
             text = pyperclip.paste()
+        self.audio_transcriber.pause()
         self.lock_manager.set_state(LockState.NORMAL_LOCK)
         prompt = f"DSA coding problem. Language: {self.language}. Provide professional explanation and implementation. \n\nProblem: {text}"
         self.handle_question(prompt, mode="DSA")
@@ -104,7 +123,6 @@ class StealthPilotApp:
     def handle_question(self, question: str, mode="TECH"):
         logger.info(f"Processing {mode} request: {question[:50]}...")
         self.ui_queue.put("Thinking...")
-        self.audio_transcriber.pause() # Pause during processing/display
         threading.Thread(target=self._ask_llm, args=(question, mode)).start()
 
     def _ask_llm(self, question: str, mode="TECH"):
@@ -117,7 +135,13 @@ class StealthPilotApp:
         if mode == "DSA":
             system_prompt = f"You are a DSA expert. Provide a professional explanation of the concept and approach followed by a clean {self.language} implementation."
 
-        answer = self.current_client.ask(question, system_prompt=system_prompt)
+        answer = self.current_client.ask(question, system_prompt=system_prompt, history=self.history)
+        
+        # Update History
+        self.history.append({"role": "user", "content": question})
+        self.history.append({"role": "assistant", "content": answer})
+        if len(self.history) > self.max_history:
+            self.history = self.history[-self.max_history:]
         
         # Ensure final token
         if not answer.strip().endswith("[X]"):
@@ -157,6 +181,12 @@ class StealthPilotApp:
         self.overlay.set_language_indicator(self.language)
         self.overlay.show(f"Language: {self.language}", 2)
         logger.info(f"Language toggled to: {self.language}")
+
+    def toggle_clipboard(self):
+        self.clipboard_enabled = not self.clipboard_enabled
+        status = "ON" if self.clipboard_enabled else "OFF"
+        self.overlay.show(f"Clipboard Monitoring: {status}", 2)
+        logger.info(f"Clipboard monitoring toggled to: {status}")
 
     def rescan_audio(self):
         logger.info("Manual Audio Rescan Triggered...")

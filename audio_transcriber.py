@@ -54,6 +54,7 @@ class AudioTranscriber:
         
         self.model = None
         self.paused = False
+        self._load_model() # Eager loading at startup
 
     def _load_model(self):
         if not WhisperModel:
@@ -81,7 +82,6 @@ class AudioTranscriber:
             return
 
         self.running = True
-        self._load_model()
         
         self.record_thread = threading.Thread(target=self._record_loop, daemon=True)
         self.process_thread = threading.Thread(target=self._process_loop, daemon=True)
@@ -147,8 +147,8 @@ class AudioTranscriber:
                                          input_device_index=dev["index"])
                     
                     frames = []
-                    # Read only 2 chunks for speed
-                    for _ in range(2):
+                    # Read multiple chunks to detect signal reliably
+                    for _ in range(4):
                         frames.append(temp_stream.read(self.chunk_size, exception_on_overflow=False))
                     temp_stream.close()
                     
@@ -156,7 +156,7 @@ class AudioTranscriber:
                     rms = np.sqrt(np.mean(audio_data**2))
                     logger.info(f"    Signal RMS: {rms:.2f}")
                     
-                    if rms > 10.0: 
+                    if rms > 2.0: # Relaxed from 5.0
                          selected_dev = dev
                          rate, channels = int(dev["defaultSampleRate"]), dev["maxInputChannels"]
                          logger.info(f"  >>> ACTIVE SIGNAL DETECTED on {dev['name']}. Prioritizing.")
@@ -165,11 +165,18 @@ class AudioTranscriber:
                     logger.debug(f"    Scan failed on {dev['index']}: {e}")
                     continue
             
-            # Absolute fallback
+            # Absolute fallback to first loopback if any, otherwise Mic
             if not selected_dev:
-                selected_dev = candidates[0]
-                rate, channels = int(selected_dev["defaultSampleRate"]), selected_dev["maxInputChannels"]
-                logger.info(f"No active signal found during startup. Defaulting to: {selected_dev['name']}")
+                if candidates:
+                    selected_dev = candidates[0]
+                    rate, channels = int(selected_dev["defaultSampleRate"]), selected_dev["maxInputChannels"]
+                    logger.info(f"No active loopback signal found during startup. Defaulting to: {selected_dev['name']}")
+                else:
+                    logger.warning("No loopback candidates found. Attempting fallback to default microphone.")
+                    default_input = p.get_default_input_device_info()
+                    selected_dev = default_input
+                    rate, channels = int(selected_dev["defaultSampleRate"]), selected_dev["maxInputChannels"]
+                    logger.info(f"Falling back to microphone: {selected_dev['name']} (Index {selected_dev['index']})")
             
             logger.info(f"Final Selection: {selected_dev['name']} (Channels: {channels}, Rate: {rate})")
             
@@ -306,10 +313,11 @@ class AudioTranscriber:
         if not text: return True
         t = text.strip().lower()
         if len(t) < 2 and not t.isalnum(): return True
-        hallucinations = ["subtitle by", "amara", "transcribed by", "captioned by", "thank you", "bye"]
+        hallucinations = ["subtitle by", "amara", "transcribed by", "captioned by"]
         for h in hallucinations:
             if h in t: return True
-        if t.count(".") >= 3 or t.count("?") >= 3: return True
+        # Relaxed: Allow up to 10 periods/questions (was 3) to support longer sentences
+        if t.count(".") >= 10 or t.count("?") >= 10: return True
         return False
 
     def _transcribe_partial(self):

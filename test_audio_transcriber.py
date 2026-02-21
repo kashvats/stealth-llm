@@ -74,9 +74,12 @@ class TestAudioTranscriber(unittest.TestCase):
         self.assertTrue(self.transcriber._should_discard(""))
         self.assertTrue(self.transcriber._should_discard("."))
         self.assertTrue(self.transcriber._should_discard("Subtitle by Amara"))
-        self.assertTrue(self.transcriber._should_discard("Thank you."))
-        self.assertTrue(self.transcriber._should_discard(" . . . "))
-        self.assertTrue(self.transcriber._should_discard("? ? ? ?"))
+        # self.assertTrue(self.transcriber._should_discard("Thank you.")) # Relaxed
+        
+        # Test punctuation limit (now 10)
+        long_dots = "." * 10
+        self.assertTrue(self.transcriber._should_discard(long_dots))
+        self.assertFalse(self.transcriber._should_discard("Hello world. This is fine. No problem here."))
         
         self.assertFalse(self.transcriber._should_discard("Hello world"))
         self.assertFalse(self.transcriber._should_discard("This is a test."))

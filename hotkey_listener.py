@@ -12,16 +12,17 @@ class GlobalHotkeyListener:
         self.callbacks = callbacks
         self.listener = None
         
-        # Hotkeys are Ctrl+Shift+<key>
+        # Hotkeys are Alt+Shift+<key>
         self.hotkeys = {
-            '<ctrl>+<shift>+z': self.callbacks.get('toggle_listen'),
-            '<ctrl>+<shift>+x': self.callbacks.get('close'),
-            '<ctrl>+<shift>+v': self.callbacks.get('copy_paste'),
-            '<ctrl>+<shift>+d': self.callbacks.get('dsa_mode'),
-            '<ctrl>+<shift>+k': self.callbacks.get('absolute_lock'),
-            '<ctrl>+<shift>+l': self.callbacks.get('unlock'),
-            '<ctrl>+<shift>+p': self.callbacks.get('toggle_language'),
-            '<ctrl>+<shift>+r': self.callbacks.get('rescan_audio'),
+            '<alt>+<shift>+z': self.callbacks.get('toggle_listen'),
+            '<alt>+<shift>+x': self.callbacks.get('close'),
+            '<alt>+<shift>+v': self.callbacks.get('copy_paste'),
+            '<alt>+<shift>+d': self.callbacks.get('dsa_mode'),
+            '<alt>+<shift>+k': self.callbacks.get('absolute_lock'),
+            '<alt>+<shift>+l': self.callbacks.get('unlock'),
+            '<alt>+<shift>+p': self.callbacks.get('toggle_language'),
+            '<alt>+<shift>+c': self.callbacks.get('toggle_clipboard'),
+            '<alt>+<shift>+r': self.callbacks.get('rescan_audio'),
             '<ctrl>+<shift>+<esc>+<esc>': self.callbacks.get('emergency_stop') 
         }
 
@@ -48,7 +49,9 @@ class GlobalHotkeyListener:
             '<ctrl>+<shift>+d': self.callbacks.get('dsa_mode'),
             '<ctrl>+<shift>+k': self.callbacks.get('absolute_lock'),
             '<ctrl>+<shift>+l': self.callbacks.get('unlock'),
-            '<ctrl>+<shift>+p': self.callbacks.get('toggle_language')
+            '<ctrl>+<shift>+p': self.callbacks.get('toggle_language'),
+            '<ctrl>+<shift>+c': self.callbacks.get('toggle_clipboard'),
+            '<ctrl>+<shift>+r': self.callbacks.get('rescan_audio')
         })
         
         # For double ESC, we might need a regular listener to catch it
