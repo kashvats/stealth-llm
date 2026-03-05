@@ -13,7 +13,7 @@ ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("green")
 
 class StealthOverlayButtons:
-    def __init__(self, root: tk.Tk, on_toggle_mode=None, on_voice_toggle=None, on_paste=None, on_dsa=None, on_clear=None, on_notepad_toggle=None, on_copy=None):
+    def __init__(self, root: tk.Tk, on_toggle_mode=None, on_voice_toggle=None, on_paste=None, on_dsa=None, on_clear=None, on_notepad_toggle=None, on_copy=None, on_history_prev=None, on_history_next=None):
         self.root = root
         self.on_toggle_mode = on_toggle_mode
         self.on_voice_toggle = on_voice_toggle
@@ -22,6 +22,8 @@ class StealthOverlayButtons:
         self.on_clear_cb = on_clear
         self.on_notepad_toggle = on_notepad_toggle
         self.on_copy_cb = on_copy
+        self.on_history_prev = on_history_prev
+        self.on_history_next = on_history_next
         
         self.notepad_active = False
         self.current_color_idx = 0
@@ -30,7 +32,7 @@ class StealthOverlayButtons:
         
         # Window Setup
         self.root.title("Stealth Pilot Pro")
-        self._set_bottom_center_geometry(800, 250)
+        self._set_top_center_geometry(800, 250)
         self.root.overrideredirect(True)
         self.root.attributes("-topmost", True)
         self.root.attributes("-alpha", 1.0) # Solid contrast
@@ -50,6 +52,23 @@ class StealthOverlayButtons:
         self.top_bar = ctk.CTkFrame(self.main_container, fg_color="transparent", height=50)
         self.top_bar.pack(side=tk.TOP, fill='x', padx=5, pady=(5, 0))
         self.top_bar.pack_propagate(False) # Keep height fixed
+        
+        # 0. HISTORY Buttons
+        self.prev_btn = ctk.CTkButton(
+            self.top_bar, text="<", width=30, height=35,
+            fg_color="#444444", hover_color="#555555",
+            text_color="white", font=("JetBrains Mono", 12, "bold"),
+            command=self._on_prev_click
+        )
+        self.prev_btn.pack(side=tk.LEFT, padx=1)
+        
+        self.next_btn = ctk.CTkButton(
+            self.top_bar, text=">", width=30, height=35,
+            fg_color="#444444", hover_color="#555555",
+            text_color="white", font=("JetBrains Mono", 12, "bold"),
+            command=self._on_next_click
+        )
+        self.next_btn.pack(side=tk.LEFT, padx=(1, 5))
         
         # 1. LIVE Button
         self.live_btn = ctk.CTkButton(
@@ -224,6 +243,14 @@ class StealthOverlayButtons:
             self.root.after_cancel(self._hide_timer)
             self._hide_timer = None
 
+    def _on_prev_click(self):
+        self._cancel_hide_timer()
+        if self.on_history_prev: self.on_history_prev()
+
+    def _on_next_click(self):
+        self._cancel_hide_timer()
+        if self.on_history_next: self.on_history_next()
+
     def _on_live_click(self):
         self._cancel_hide_timer()
         if self.on_voice_toggle: self.on_voice_toggle()
@@ -287,11 +314,11 @@ class StealthOverlayButtons:
         self.toast_label.configure(text=text)
         self.root.after(2000, lambda: self.toast_label.configure(text=""))
 
-    def _set_bottom_center_geometry(self, width, height):
+    def _set_top_center_geometry(self, width, height):
+        self.default_width = width
         screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
         x = (screen_width // 2) - (width // 2)
-        y = screen_height - height - 100
+        y = 10
         self.root.geometry(f"{width}x{height}+{x}+{y}")
 
     def toggle_notepad(self):
@@ -323,6 +350,20 @@ class StealthOverlayButtons:
         if duration > 0:
             self._hide_timer = self.root.after(duration*1000, self.root.withdraw)
 
+    def _auto_resize(self, text):
+        try:
+            lines = text.split('\n')
+            total_lines = sum(max(1, len(line) // 70) for line in lines)
+            target_height = max(250, min(800, 150 + (total_lines * 22)))
+            w = self.root.winfo_width()
+            if w < 200: w = getattr(self, 'default_width', 800)
+            x = self.root.winfo_x()
+            y = self.root.winfo_y()
+            if x >= 0 and y >= 0:
+                self.root.geometry(f"{w}x{int(target_height)}+{x}+{y}")
+        except Exception as e:
+            logger.error(f"Resize error: {e}")
+
     def update_text(self, text, force=False):
         if self.notepad_active and not force:
             return
@@ -330,8 +371,7 @@ class StealthOverlayButtons:
         self.text_area.delete("1.0", tk.END)
         self.text_area.insert(tk.END, text)
         self.text_area.see(tk.END)
-        # If not force and not notepad, we could disable it again, but usually it's better to keep it normal
-        # to allow minor user corrections if they click in.
+        self._auto_resize(text)
 
     def update_caption(self, text, is_final=False, force=False):
         if self.notepad_active and not force:
@@ -341,6 +381,7 @@ class StealthOverlayButtons:
         self.text_area.configure(text_color="#008822" if not is_final else self.active_color)
         self.text_area.insert(tk.END, text)
         self.text_area.see(tk.END)
+        self._auto_resize(text)
 
     def update_meter(self, level):
         boosted = min(1.0, level * 5.0)

@@ -6,6 +6,7 @@ import os
 import sys
 import pyperclip
 import time
+import datetime
 from queue import Queue
 from dotenv import load_dotenv
 import json
@@ -43,10 +44,16 @@ class StealthPilotApp:
             on_dsa=self.trigger_dsa_mode,
             on_clear=self.clear_context,
             on_notepad_toggle=self.toggle_lock,
-            on_copy=self.copy_to_clipboard
+            on_copy=self.copy_to_clipboard,
+            on_history_prev=self.show_prev_answer,
+            on_history_next=self.show_next_answer
         )
         self.ui_queue = Queue()
         self.is_online = False
+        
+        # History & Logging State
+        self.answer_history = []  # List of dicts: {'question': str, 'answer': str}
+        self.history_index = -1
         
         # Audio
         logger.info("Initializing Audio Module (Eager Loading)...")
@@ -117,21 +124,30 @@ class StealthPilotApp:
                 self.language = cfg.get("language", "Python")
                 print(self.language)
                 self.current_color = cfg.get("color_theme", "Green")
-                self.is_online = (cfg.get("llm_mode", "local") == "cloud")
+                self.is_online = (cfg.get("llm_mode", "cloud") == "cloud")
                 if self.is_online:
                     if not hasattr(self, "openai_client"):
-                        self.openai_client = OpenAIClient(api_key=os.getenv("OPENAI_API_KEY"))
+                        self.openai_client = OpenAIClient(
+                            api_key=os.getenv("OPENAI_API_KEY"),
+                            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+                        )
                     self.current_client = self.openai_client
                 logger.info(f"Config loaded: Lang={self.language}, Color={self.current_color}, Online={self.is_online}")
             else:
                 self.language = "Python"
                 self.current_color = "Green"
-                self.is_online = False
+                self.is_online = True
+                if not hasattr(self, "openai_client"):
+                    self.openai_client = OpenAIClient(
+                        api_key=os.getenv("OPENAI_API_KEY"),
+                        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+                    )
+                self.current_client = self.openai_client
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
             self.language = "Python"
             self.current_color = "Green"
-            self.is_online = False
+            self.is_online = True
 
     def _save_config(self):
         try:
@@ -211,7 +227,7 @@ class StealthPilotApp:
             system_prompt = "You are a professional software engineer."
 
         if mode == "DSA":
-            system_prompt = f"You are a DSA expert. Provide a professional explanation of the concept and approach followed by a clean {self.language} implementation."
+            system_prompt = f"You are a software engineer in an interview solving a DSA problem. Speak in the first person ('I'). Explain your logical approach and time/space complexity naturally, then provide a clean {self.language} implementation."
         else:
             system_prompt += f"\n\nPRIMARY TARGET LANGUAGE: {self.language}. Provide all code examples, syntax, and solutions in this language."
 
@@ -237,7 +253,17 @@ class StealthPilotApp:
             if not answer.strip().endswith("[X]"):
                 answer = answer.strip() + " [X]"
                 
+            # Update Answer History and Index
+            entry = {"question": question, "answer": answer}
+            self.answer_history.append(entry)
+            self.history_index = len(self.answer_history) - 1
+                
+            # UI Update
             self.ui_queue.put(answer)
+            
+            # Log to File
+            self._log_interview(question, answer)
+            
         except Exception as e:
             logger.error(f"LLM Request Failed: {e}")
             self.ui_queue.put(f"Error: {e} [X]")
@@ -245,6 +271,38 @@ class StealthPilotApp:
             # STRICT MODE: No auto-unlock, no auto-resume.
             # Master Lock must be manually released via UI click.
             logger.info("Generation complete. System remains LOCKED as per Strict Lock policy.")
+
+    def _log_interview(self, question: str, answer: str):
+        """Saves the question and answer to a timestamped log file."""
+        log_dir = "interview_logs"
+        os.makedirs(log_dir, exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = os.path.join(log_dir, f"qa_{timestamp}.txt")
+        
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(f"--- Question ---\n{question}\n\n")
+                f.write(f"--- Answer ---\n{answer}\n")
+            logger.info(f"Saved interview log to {filename}")
+        except Exception as e:
+            logger.error(f"Failed to write interview log: {e}")
+
+    def show_prev_answer(self):
+        if not self.answer_history or self.history_index <= 0:
+            return # Already at oldest or none exists
+        self.history_index -= 1
+        entry = self.answer_history[self.history_index]
+        self.overlay.show(f"[History {self.history_index+1}/{len(self.answer_history)}]\nQ: {entry['question'][:50]}...\n\n{entry['answer']}", duration=0)
+        logger.info(f"Navigated to history index {self.history_index}")
+
+    def show_next_answer(self):
+        if not self.answer_history or self.history_index >= len(self.answer_history) - 1:
+            return # Already at newest or none exists
+        self.history_index += 1
+        entry = self.answer_history[self.history_index]
+        prefix = f"[History {self.history_index+1}/{len(self.answer_history)}]\n" if self.history_index < len(self.answer_history)-1 else ""
+        self.overlay.show(f"{prefix}Q: {entry['question'][:50]}...\n\n{entry['answer']}", duration=0)
+        logger.info(f"Navigated to history index {self.history_index}")
 
     def toggle_listen(self):
         self.listening = not self.listening
@@ -259,6 +317,8 @@ class StealthPilotApp:
     def clear_context(self):
         """Resets history and UI."""
         self.history = []
+        self.answer_history = []
+        self.history_index = -1
         self.ui_queue.put("")
         self.lock_manager.try_unlock(force=True)
         self.overlay.show("Context Cleared (Force Unlocked)", duration=2)
@@ -285,7 +345,10 @@ class StealthPilotApp:
             if self.is_online:
                 # Mock initialization of OpenAI if not exists
                 if not hasattr(self, "openai_client"):
-                    self.openai_client = OpenAIClient(api_key=os.getenv("OPENAI_API_KEY"))
+                    self.openai_client = OpenAIClient(
+                        api_key=os.getenv("OPENAI_API_KEY"),
+                        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+                    )
                 self.current_client = self.openai_client
                 self.overlay.show("Switched to Online ☁️ (OpenAI)", duration=0)
             else:
