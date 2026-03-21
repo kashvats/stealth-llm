@@ -47,3 +47,17 @@ Thumbs.db
 # Project generated
 resume_text.txt
 Resume.pdf
+*.pdf
+*.txt
+*.tex
+*.loc
+*.log
+*.out
+*.aux
+*.toc
+py_files/
+doc/
+interview_latex/
+interview_prep/
+interview_logs/
+prompts/
