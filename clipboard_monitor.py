@@ -13,51 +13,29 @@ class ClipboardMonitor:
         self.last_text = ""
         self.running = False
 
+    def is_valid_text(self, text: str) -> bool:
+        """Basic validation to ensure we have actual text content."""
+        if not text:
+            return False
+        text_clean = text.strip()
+        if len(text_clean) < 2:
+            return False
+        if len(text_clean) > 50000: # Sanity limit for huge copies
+            return False
+        return True
+
     def start(self):
         self.running = True
         self.last_text = pyperclip.paste()
+        logger.info("Clipboard Monitor Started (Transparent Mode).")
         while self.running:
             try:
                 current_text = pyperclip.paste()
                 if current_text != self.last_text:
-                    logger.debug(f"Clipboard changed detected. Length: {len(current_text)}")
                     self.last_text = current_text
-                    if self.is_question(current_text):
-                        logger.info(f"Clipboard question accepted: {current_text[:30]}...")
+                    if self.is_valid_text(current_text):
+                        logger.debug(f"Clipboard change detected (Length: {len(current_text)}). Emitting to app.")
                         self.callback(current_text)
-                    else:
-                        logger.debug("Clipboard change ignored by is_question filter.")
             except Exception as e:
                 logger.error(f"Clipboard Error: {e}")
             time.sleep(self.interval)
-
-    def stop(self):
-        self.running = False
-
-    def is_question(self, text: str) -> bool:
-        if not text: return False
-        text_clean = text.strip()
-        if len(text_clean) < 2: return False # Allow very short snippets like 'a=1'
-        if len(text_clean) > 5000: return False 
-            
-        t_lower = text_clean.lower()
-        # Direct questions
-        if "?" in t_lower: return True
-        
-        # Coding keywords (using regex for input/output patterns)
-        coding_keys = ["def ", "class ", "import ", "solve", "implement", "function"]
-        if any(k in t_lower for k in coding_keys): return True
-        
-        # Regex for data patterns like input=[...] or nums = [...] or just arr = [...]
-        # Also detect raw bracket patterns that look like data
-        data_pattern = r"(input|output|nums|target|arr|array|list|data)\s*=|\[.*\]"
-        if re.search(data_pattern, t_lower): return True
-            
-        # Question starters
-        q_starters = ["what", "how", "why", "when", "who", "define", "explain"]
-        if any(t_lower.startswith(k) for k in q_starters): return True
-            
-        # Multi-line usually means a problem statement or code
-        if len(text_clean.splitlines()) >= 2: return True
-            
-        return False

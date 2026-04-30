@@ -148,6 +148,12 @@ class StealthPilotApp:
             self.language = "Python"
             self.current_color = "Green"
             self.is_online = True
+            if not hasattr(self, "openai_client"):
+                self.openai_client = OpenAIClient(
+                    api_key=os.getenv("OPENAI_API_KEY"),
+                    model=os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+                )
+            self.current_client = self.openai_client
 
     def _save_config(self):
         try:
@@ -169,19 +175,43 @@ class StealthPilotApp:
         self.overlay._on_color_change(self.current_color)
 
     def _on_clipboard_change(self, text: str):
-        logger.debug(f"TRACER: Clipboard change received. Enabled: {self.clipboard_enabled}, Locked: {self.lock_manager.is_locked()}")
         if not self.clipboard_enabled:
             return
-        
-        # Broadened Interruption: If it's more than 20 chars, we treat it as a potential task
-        # regardless of current lock state, ensuring the app stays responsive.
-        if len(text.strip()) < 20 and self.lock_manager.is_locked():
-            # Specifically check for short questions
-            is_question = "?" in text or any(k in text.lower() for k in ["tell me", "solve", "explain", "how do I"])
-            if not is_question:
-                return
             
-        self.trigger_copy_paste(text)
+        text_clean = text.strip()
+        if len(text_clean) < 5:
+            return # Ignore tiny copies
+            
+        logger.info(f"Clipboard Seen: '{text_clean[:30]}...'")
+        
+        # Visual feedback: Help user know detection is working
+        try:
+             self.overlay._show_toast(f"📋 Copied: {text_clean[:20]}...")
+        except Exception as e:
+             logger.debug(f"Toast failed: {e}")
+        
+        is_locked = self.lock_manager.is_locked()
+        should_process = False
+        
+        if not is_locked:
+            # If unlocked, respond to everything substantial
+            should_process = True
+        else:
+            # Locked Mode: Be smart about trigger
+            lower_text = text_clean.lower()
+            whitelist = [
+                "?", "tell me", "solve", "explain", "how do i", "what is",
+                "input:", "output:", "example:", "explanation:"
+            ]
+            if any(k in lower_text for k in whitelist):
+                should_process = True
+            elif len(text_clean) > 200 or len(text_clean.splitlines()) >= 2:
+                should_process = True
+
+        if should_process:
+            self.trigger_copy_paste(text_clean)
+        else:
+            logger.info("Clipboard ignored in Locked mode (no question/task detected).")
 
     def trigger_copy_paste(self, text: str = None):
         if not text:

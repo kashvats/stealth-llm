@@ -371,7 +371,7 @@ class StealthOverlayButtons:
         self.text_area.delete("1.0", tk.END)
         self.text_area.insert(tk.END, text)
         self.text_area.see(tk.END)
-        self._auto_resize(text)
+        # self._auto_resize(text) # Disabled per user request (no resizing)
 
     def update_caption(self, text, is_final=False, force=False):
         if self.notepad_active and not force:
@@ -381,7 +381,7 @@ class StealthOverlayButtons:
         self.text_area.configure(text_color="#008822" if not is_final else self.active_color)
         self.text_area.insert(tk.END, text)
         self.text_area.see(tk.END)
-        self._auto_resize(text)
+        # self._auto_resize(text) # Disabled per user request (no resizing)
 
     def update_meter(self, level):
         boosted = min(1.0, level * 5.0)
