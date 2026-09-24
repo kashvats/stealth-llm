@@ -68,7 +68,7 @@ class OpenAIClient(LLMClient):
         }
         
         try:
-            response = requests.post(self.base_url, headers=headers, json=data, timeout=30)
+            response = requests.post(self.base_url, headers=headers, json=data, timeout=120)
             if response.status_code != 200:
                 return f"Error (OpenAI): {response.status_code} - {response.text}"
                 
@@ -123,11 +123,12 @@ class OllamaClient(LLMClient):
         data = {
             "model": self.model,
             "messages": messages,
-            "stream": False
+            "stream": False,
+            "keep_alive": -1  # Keep model in memory indefinitely for instant response
         }
         
         try:
-            response = requests.post(url, json=data, timeout=30)
+            response = requests.post(url, json=data, timeout=120)
             
             if response.status_code != 200:
                 error_msg = response.text
@@ -135,7 +136,8 @@ class OllamaClient(LLMClient):
                     error_json = response.json()
                     if "error" in error_json:
                         error_msg = error_json["error"]
-                except: pass
+                except (ValueError, KeyError) as e:
+                    logger.debug(f"Could not parse Ollama error JSON: {e}")
                 logger.error(f"Ollama API Error ({response.status_code}): {error_msg}")
                 return f"Error: {error_msg}"
                 

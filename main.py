@@ -10,6 +10,7 @@ import datetime
 from queue import Queue
 from dotenv import load_dotenv
 import json
+import re
 
 from stealth_overlay_buttons import StealthOverlayButtons
 from clipboard_monitor import ClipboardMonitor
@@ -17,6 +18,7 @@ from llm_client import OllamaClient, OpenAIClient, MockLLMClient
 from audio_transcriber import AudioTranscriber
 from lock_manager import LockManager, LockState
 from hotkey_listener import GlobalHotkeyListener
+from knowledge_base import KnowledgeBase
 
 load_dotenv()
 
@@ -29,6 +31,9 @@ class StealthPilotApp:
         
         # Lock Manager
         self.lock_manager = LockManager(on_state_change=self._handle_lock_change)
+        
+        # Knowledge Base (Local Cache)
+        self.kb = KnowledgeBase("dsa.json")
         
         # Clients
         local_model = os.getenv("OLLAMA_MODEL", "llama3.2")
@@ -117,43 +122,52 @@ class StealthPilotApp:
             self.handle_question(text)
 
     def _load_config(self):
+        default_config = {
+            "language": "Python",
+            "color_theme": "Green",
+            "llm_mode": "cloud"
+        }
+
         try:
             if os.path.exists("config.json"):
                 with open("config.json", "r") as f:
                     cfg = json.load(f)
-                self.language = cfg.get("language", "Python")
-                print(self.language)
-                self.current_color = cfg.get("color_theme", "Green")
-                self.is_online = (cfg.get("llm_mode", "cloud") == "cloud")
-                if self.is_online:
-                    if not hasattr(self, "openai_client"):
-                        self.openai_client = OpenAIClient(
-                            api_key=os.getenv("OPENAI_API_KEY"),
-                            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-                        )
-                    self.current_client = self.openai_client
-                logger.info(f"Config loaded: Lang={self.language}, Color={self.current_color}, Online={self.is_online}")
+                self.language = cfg.get("language", default_config["language"])
+                self.current_color = cfg.get("color_theme", default_config["color_theme"])
+                self.is_online = (cfg.get("llm_mode", default_config["llm_mode"]) == "cloud")
+                logger.info(f"Config loaded from file: Lang={self.language}, Color={self.current_color}, Online={self.is_online}")
             else:
-                self.language = "Python"
-                self.current_color = "Green"
-                self.is_online = True
-                if not hasattr(self, "openai_client"):
-                    self.openai_client = OpenAIClient(
-                        api_key=os.getenv("OPENAI_API_KEY"),
-                        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-                    )
-                self.current_client = self.openai_client
+                logger.info("Config file not found, using defaults")
+                self.language = default_config["language"]
+                self.current_color = default_config["color_theme"]
+                self.is_online = (default_config["llm_mode"] == "cloud")
+        except json.JSONDecodeError as e:
+            logger.error(f"Corrupt config.json: {e}. Using defaults.")
+            self.language = default_config["language"]
+            self.current_color = default_config["color_theme"]
+            self.is_online = (default_config["llm_mode"] == "cloud")
+        except IOError as e:
+            logger.error(f"Cannot read config.json: {e}. Using defaults.")
+            self.language = default_config["language"]
+            self.current_color = default_config["color_theme"]
+            self.is_online = (default_config["llm_mode"] == "cloud")
         except Exception as e:
-            logger.error(f"Failed to load config: {e}")
-            self.language = "Python"
-            self.current_color = "Green"
-            self.is_online = True
-            if not hasattr(self, "openai_client"):
+            logger.error(f"Unexpected error loading config: {type(e).__name__}: {e}. Using defaults.")
+            self.language = default_config["language"]
+            self.current_color = default_config["color_theme"]
+            self.is_online = (default_config["llm_mode"] == "cloud")
+
+        # Initialize OpenAI client if online mode
+        if self.is_online and not hasattr(self, "openai_client"):
+            try:
                 self.openai_client = OpenAIClient(
                     api_key=os.getenv("OPENAI_API_KEY"),
                     model=os.getenv("OPENAI_MODEL", "gpt-4o-mini")
                 )
-            self.current_client = self.openai_client
+                self.current_client = self.openai_client
+            except Exception as e:
+                logger.warning(f"Failed to initialize OpenAI client: {e}. Falling back to Ollama.")
+                self.current_client = self.ollama_client
 
     def _save_config(self):
         try:
@@ -184,83 +198,127 @@ class StealthPilotApp:
             
         logger.info(f"Clipboard Seen: '{text_clean[:30]}...'")
         
-        # Visual feedback: Help user know detection is working
-        try:
-             self.overlay._show_toast(f"📋 Copied: {text_clean[:20]}...")
-        except Exception as e:
-             logger.debug(f"Toast failed: {e}")
+        # Visual feedback: Detect copy
+        logger.info(f"Clipboard Detection: {text_clean[:20]}...")
         
         is_locked = self.lock_manager.is_locked()
-        should_process = False
         
-        if not is_locked:
-            # If unlocked, respond to everything substantial
-            should_process = True
-        else:
-            # Locked Mode: Be smart about trigger
+        # Smart Trigger Logic:
+        # If UNLOCKED, solve everything.
+        # If LOCKED, only solve if it looks like a real problem or question.
+        should_process = not is_locked
+        
+        if is_locked:
             lower_text = text_clean.lower()
-            whitelist = [
-                "?", "tell me", "solve", "explain", "how do i", "what is",
-                "input:", "output:", "example:", "explanation:"
-            ]
-            if any(k in lower_text for k in whitelist):
+            # Technical problem signatures
+            signatures = ["?", "nums", "target", "input:", "output:", "solve", "explain", "def ", "class ", "function"]
+            if any(sig in lower_text for sig in signatures):
                 should_process = True
-            elif len(text_clean) > 200 or len(text_clean.splitlines()) >= 2:
+            elif len(text_clean) > 300: # Very long text is likely a problem statement
                 should_process = True
 
         if should_process:
+            logger.info("Smart Trigger: Processing clipboard change.")
             self.trigger_copy_paste(text_clean)
         else:
-            logger.info("Clipboard ignored in Locked mode (no question/task detected).")
+            logger.info("Smart Trigger: Ignored trivial/random copy while LOCKED.")
 
     def trigger_copy_paste(self, text: str = None):
         if not text:
             text = pyperclip.paste()
         logger.info(f"TRACER: Triggering Copy-Paste for text length: {len(text)}")
         self.audio_transcriber.pause()
-        
-        # COPY/PASTE now triggers ABSOLUTE_LOCK (BUNK mode).
-        # This ensures the system stays locked and doesn't auto-unlock after generation.
         self.lock_manager.set_state(LockState.ABSOLUTE_LOCK)
-        
-        # Determine if it's raw data/problem statement
+
+        # 1. Try Local Lookup on RAW text first
+        local_result = self.kb.lookup(text)
+        if local_result:
+            answer = local_result.get("answer", "")
+            if not answer.strip().endswith("[X]"):
+                answer = answer.strip() + " [X]"
+            header = "⚡ [LOCAL MATCH FOUND]\n\n"
+            self.ui_queue.put(header + answer)
+            logger.info("Matched raw text in local knowledge base.")
+            return
+
+        # 2. Pattern detection for mode selection
         import re
-        data_pattern = r"(input|output|nums|target|arr|array)\s*="
-        if re.search(data_pattern, text.lower()):
-            prompt = f"Data pattern detected:\n\n{text}\n\nTask: Provide ONLY the {self.language} implementation to solve this. Strictly skip all theoretical explanations, introductions, or best-practice discussions. Code only."
-        elif len(text.splitlines()) > 1:
-            prompt = f"Problem statement detected:\n\n{text}\n\nTask: Provide a professional architectural explanation followed by the {self.language} implementation."
+        code_pattern = r"(def\s+|class\s+|function|public\s+static|void|int\s+)"
+        data_pattern = r"(input|output|nums|target|arr|array)\s*[=:]"
+        
+        is_code = re.search(code_pattern, text)
+        has_data = re.search(data_pattern, text.lower())
+        
+        mode = "TECH"
+        if is_code or has_data or len(text.splitlines()) > 5:
+            mode = "DSA"
+            prompt = f"Analyze this input and provide the correct DSA solution:\n\n{text}"
         else:
             prompt = text
             
-        self.handle_question(prompt)
+        # 3. Extract Test Data for Validation
+            
+        # 3. Extract Test Data for Validation
+        test_input = None
+        expected_output = None
+        input_match = re.search(r"(?:input|nums1?|target)\s*[=:]\s*([^\n\r]*)", text, re.I)
+        output_match = re.search(r"output\s*[=:]\s*([^\n\r]*)", text, re.I)
+        if input_match: test_input = input_match.group(1).strip()
+        if output_match: expected_output = output_match.group(1).strip()
+        
+        if test_input: logger.info(f"Detected Test Input: {test_input}")
+        if expected_output: logger.info(f"Detected Expected Output: {expected_output}")
+
+        # 4. Proceed to LLM with augmented prompt
+        self.ui_queue.put("Thinking...")
+        threading.Thread(target=self._ask_llm, args=(prompt, "TECH", test_input, expected_output)).start()
 
     def trigger_dsa_mode(self, text: str = None):
         if not text:
             text = pyperclip.paste()
         self.audio_transcriber.pause()
-        # DSA now triggers ABSOLUTE_LOCK for consistency.
         self.lock_manager.set_state(LockState.ABSOLUTE_LOCK)
+        
+        # 1. Try Local Lookup on RAW text first
+        local_result = self.kb.lookup(text)
+        if local_result:
+            answer = local_result.get("answer", "")
+            if not answer.strip().endswith("[X]"):
+                answer = answer.strip() + " [X]"
+            header = "⚡ [LOCAL DSA MATCH]\n\n"
+            self.ui_queue.put(header + answer)
+            return
+
+        # 2. Proceed to LLM
         prompt = f"DSA coding problem. Language: {self.language}. Provide professional explanation and implementation. \n\nProblem: {text}"
         self.handle_question(prompt, mode="DSA")
 
     def handle_question(self, question: str, mode="TECH"):
-        logger.info(f"Processing {mode} request: {question[:50]}...")
+        # This is now the 'LLM-only' or 'Legacy' entry point
+        # KnowledgeBase lookup is now handled upstream in trigger methods for better context control
+        logger.info(f"Processing {mode} LLM request: {question[:50]}...")
         self.ui_queue.put("Thinking...")
-        threading.Thread(target=self._ask_llm, args=(question, mode)).start()
+        threading.Thread(target=self._ask_llm, args=(question, mode, None, None)).start()
 
-    def _ask_llm(self, question: str, mode="TECH"):
-        try:
-            with open("system_prompt.txt", "r", encoding="utf-8") as f:
-                system_prompt = f.read()
-        except:
-            system_prompt = "You are a professional software engineer."
-
+    def _ask_llm(self, question: str, mode: str = "TECH", test_input: str = None, expected_output: str = None):
+        """Worker thread for LLM requests. Handles validation if enabled."""
+        system_prompt = "You are 'The Silent Strategist', an elite AI assistant for technical interviews. "
         if mode == "DSA":
-            system_prompt = f"You are a software engineer in an interview solving a DSA problem. Speak in the first person ('I'). Explain your logical approach and time/space complexity naturally, then provide a clean {self.language} implementation."
+            # Inject Pattern IDs into system prompt for identification
+            pattern_list = ", ".join([p["id"] for p in self.kb.patterns])
+            system_prompt = (
+                f"You are an elite software engineer. Analyze the provided input (text or code).\n"
+                f"1. Determine the core DSA problem being solved.\n"
+                f"2. If it matches a pattern in this list: [{pattern_list}], you MUST start your response with 'PATTERN_ID: <ID>'.\n"
+                f"3. Then provide a professional, optimized {self.language} solution. Speak in the first person ('I')."
+            )
         else:
             system_prompt += f"\n\nPRIMARY TARGET LANGUAGE: {self.language}. Provide all code examples, syntax, and solutions in this language."
 
+        # Feature Flags
+        do_validate = os.getenv("ENABLE_CODE_VALIDATION", "false").lower() == "true"
+        from code_validator import CodeValidator
+        
         # Include Resume Context if available
         if os.path.exists("resume.txt"):
             try:
@@ -273,6 +331,35 @@ class StealthPilotApp:
         try:
             answer = self.current_client.ask(question, system_prompt=system_prompt, history=self.history)
             
+            # Pattern Injection Loop
+            if "PATTERN_ID:" in answer:
+                try:
+                    p_id = answer.split("PATTERN_ID:")[1].split()[0].strip().replace(",", "").replace(".", "")
+                    golden_algo = self.kb.get_pattern(p_id)
+                    if golden_algo:
+                        logger.info(f"Injecting Golden Solution for pattern: {p_id}")
+                        # Replace the AI code block with Golden Code
+                        golden_md = f"\n\n```python\n{golden_algo['code']}\n```\n*(Golden Solution Injected)*"
+                        # Simple replacement of the code block part
+                        answer = re.sub(r"```python\n.*?\n```", golden_md, answer, flags=re.DOTALL)
+                except Exception as e:
+                    logger.warning(f"Failed to inject golden solution: {e}")
+
+            # Validation Loop
+            if do_validate and test_input and expected_output:
+                code = CodeValidator.extract_python_code(answer)
+                if code:
+                    logger.info(f"Validating code against input={test_input}, expected={expected_output}...")
+                    success, feedback = CodeValidator.validate_logic(code, test_input, expected_output)
+                    if not success:
+                        logger.warning(f"Validation failed: {feedback}. Retrying LLM...")
+                        retry_prompt = f"The previous code failed validation.\nError: {feedback}\n\nPlease fix the code and ensure it returns {expected_output} for input {test_input}."
+                        answer = self.current_client.ask(retry_prompt, system_prompt=system_prompt, history=self.history)
+                        answer += f"\n\n*(Self-Corrected after validation fail: {feedback})*"
+                    else:
+                        logger.info("Validation successful!")
+                        answer += "\n\n*(Verified with internal test case)*"
+
             # Update History
             self.history.append({"role": "user", "content": question})
             self.history.append({"role": "assistant", "content": answer})
@@ -291,6 +378,10 @@ class StealthPilotApp:
             # UI Update
             self.ui_queue.put(answer)
             
+            # Update Knowledge Base (Cache for next time)
+            if "Error" not in answer and (mode == "DSA" or len(question) > 20):
+                self.kb.add_entry(question, answer, category=mode)
+            
             # Log to File
             self._log_interview(question, answer)
             
@@ -305,24 +396,26 @@ class StealthPilotApp:
     def _log_interview(self, question: str, answer: str):
         """Saves the question and answer to a timestamped log file."""
         log_dir = "interview_logs"
-        os.makedirs(log_dir, exist_ok=True)
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = os.path.join(log_dir, f"qa_{timestamp}.txt")
-        
         try:
+            os.makedirs(log_dir, exist_ok=True)
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            filename = os.path.join(log_dir, f"qa_{timestamp}.txt")
+
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(f"--- Question ---\n{question}\n\n")
                 f.write(f"--- Answer ---\n{answer}\n")
             logger.info(f"Saved interview log to {filename}")
+        except OSError as e:
+            logger.error(f"Cannot write interview log (disk/permissions): {e}")
         except Exception as e:
-            logger.error(f"Failed to write interview log: {e}")
+            logger.error(f"Unexpected error writing interview log: {type(e).__name__}: {e}")
 
     def show_prev_answer(self):
         if not self.answer_history or self.history_index <= 0:
             return # Already at oldest or none exists
         self.history_index -= 1
         entry = self.answer_history[self.history_index]
-        self.overlay.show(f"[History {self.history_index+1}/{len(self.answer_history)}]\nQ: {entry['question'][:50]}...\n\n{entry['answer']}", duration=0)
+        self.overlay.update_text(f"[History {self.history_index+1}/{len(self.answer_history)}]\nQ: {entry['question'][:50]}...\n\n{entry['answer']}", force=True)
         logger.info(f"Navigated to history index {self.history_index}")
 
     def show_next_answer(self):
@@ -331,7 +424,7 @@ class StealthPilotApp:
         self.history_index += 1
         entry = self.answer_history[self.history_index]
         prefix = f"[History {self.history_index+1}/{len(self.answer_history)}]\n" if self.history_index < len(self.answer_history)-1 else ""
-        self.overlay.show(f"{prefix}Q: {entry['question'][:50]}...\n\n{entry['answer']}", duration=0)
+        self.overlay.update_text(f"{prefix}Q: {entry['question'][:50]}...\n\n{entry['answer']}", force=True)
         logger.info(f"Navigated to history index {self.history_index}")
 
     def toggle_listen(self):
