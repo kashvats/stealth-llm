@@ -117,19 +117,33 @@ class AudioTranscriber:
 
     def _record_loop(self):
         try:
-            import pyaudiowpatch as pyaudio
-            p = pyaudio.PyAudio()
-            
-            # Find all loopback candidates
-            candidates = list(p.get_loopback_device_info_generator())
-            
-            # Find Default WASAPI Speakers to prioritize
-            wasapi_info = p.get_host_api_info_by_type(pyaudio.paWASAPI)
-            default_speakers_idx = wasapi_info["defaultOutputDevice"]
-            default_speakers = p.get_device_info_by_index(default_speakers_idx)
-            
-            # Sort candidates: Default first
-            candidates.sort(key=lambda x: 0 if default_speakers["name"] in x["name"] else 1)
+            if platform.system() == "Windows":
+                import pyaudiowpatch as pyaudio
+                p = pyaudio.PyAudio()
+                # Find all loopback candidates
+                candidates = list(p.get_loopback_device_info_generator())
+                
+                # Find Default WASAPI Speakers to prioritize
+                wasapi_info = p.get_host_api_info_by_type(pyaudio.paWASAPI)
+                default_speakers_idx = wasapi_info["defaultOutputDevice"]
+                default_speakers = p.get_device_info_by_index(default_speakers_idx)
+                
+                # Sort candidates: Default first
+                candidates.sort(key=lambda x: 0 if default_speakers["name"] in x["name"] else 1)
+            else:
+                import pyaudio
+                p = pyaudio.PyAudio()
+                # On macOS/Linux, we don't have native loopback via WASAPI.
+                # We look for virtual devices like BlackHole, Soundflower, or Loopback.
+                candidates = []
+                for i in range(p.get_device_count()):
+                    dev = p.get_device_info_by_index(i)
+                    name = dev.get('name').lower()
+                    if dev.get('maxInputChannels') > 0:
+                        if any(k in name for k in ["blackhole", "soundflower", "loopback", "background music"]):
+                            candidates.insert(0, dev)
+                        elif "virtual" in name or "monitor" in name:
+                            candidates.append(dev)
             
             logger.info(f"Scanning {len(candidates)} loopback candidates for signal...")
             selected_dev = None
@@ -140,9 +154,10 @@ class AudioTranscriber:
                 try:
                     logger.info(f"  Testing {dev['name']} (Index {dev['index']})...")
                     # Using a very short duration for the test read
+                    sample_rate = int(dev.get("defaultSampleRate", 44100))
                     temp_stream = p.open(format=pyaudio.paInt16,
-                                         channels=dev["maxInputChannels"],
-                                         rate=int(dev["defaultSampleRate"]),
+                                         channels=int(dev["maxInputChannels"]),
+                                         rate=sample_rate,
                                          input=True,
                                          input_device_index=dev["index"])
                     
@@ -158,7 +173,7 @@ class AudioTranscriber:
                     
                     if rms > 2.0: # Relaxed from 5.0
                          selected_dev = dev
-                         rate, channels = int(dev["defaultSampleRate"]), dev["maxInputChannels"]
+                         rate, channels = int(dev.get("defaultSampleRate", 44100)), int(dev["maxInputChannels"])
                          logger.info(f"  >>> ACTIVE SIGNAL DETECTED on {dev['name']}. Prioritizing.")
                          break
                 except Exception as e:
@@ -173,10 +188,15 @@ class AudioTranscriber:
                     logger.info(f"No active loopback signal found during startup. Defaulting to: {selected_dev['name']}")
                 else:
                     logger.warning("No loopback candidates found. Attempting fallback to default microphone.")
-                    default_input = p.get_default_input_device_info()
-                    selected_dev = default_input
-                    rate, channels = int(selected_dev["defaultSampleRate"]), selected_dev["maxInputChannels"]
-                    logger.info(f"Falling back to microphone: {selected_dev['name']} (Index {selected_dev['index']})")
+                    try:
+                        default_input = p.get_default_input_device_info()
+                        selected_dev = default_input
+                        rate, channels = int(selected_dev.get("defaultSampleRate", 44100)), int(selected_dev["maxInputChannels"])
+                        logger.info(f"Falling back to microphone: {selected_dev['name']} (Index {selected_dev['index']})")
+                    except:
+                        logger.error("No default input device found.")
+                        self.running = False
+                        return
             
             logger.info(f"Final Selection: {selected_dev['name']} (Channels: {channels}, Rate: {rate})")
             

@@ -1,0 +1,1675 @@
+[
+  {
+    "id": 1,
+    "question": "Two Sum: Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+    "answer": "To solve Two Sum efficiently, we use a hash map to store the values we've seen so far and their indices. As we iterate through the array, we calculate the 'complement' (target - current_value). If the complement is already in our hash map, we've found our pair and return the current index and the stored index. This approach has O(n) time complexity and O(n) space complexity, which is much better than the O(n^2) brute-force approach. In Python, this is implemented using a dictionary for the hash map.",
+    "counterQuestion": "What if the input array is already sorted? How would that change your approach?",
+    "counterQuestionAnswer": "If the array is sorted, we can use the 'Two Pointers' technique. Place one pointer at the start and one at the end. If the sum is too small, move the left pointer right. If it's too large, move the right pointer left. This reduces space complexity to O(1) while maintaining O(n) time complexity.",
+    "category": "DSA",
+    "topic": "Arrays & Hashing",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "array",
+      "hashmap"
+    ]
+  },
+  {
+    "id": 2,
+    "question": "Valid Parentheses: Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
+    "answer": "The optimal way to validate parentheses is using a Stack. We iterate through the string; if we see an opening bracket, we push it onto the stack. If we see a closing bracket, we check if the stack is empty or if the top of the stack matches the corresponding opening bracket. If it doesn't, the string is invalid. At the end, the stack must be empty for the string to be valid. This runs in O(n) time and O(n) space.",
+    "counterQuestion": "Can you solve this without using a full stack if there's only one type of parenthesis, like just '(' and ')'?",
+    "counterQuestionAnswer": "Yes, if there's only one type, we can simply maintain a counter. Increment for '(' and decrement for ')'. If the counter ever goes negative, or if it's not zero at the end, the string is invalid. This reduces space to O(1).",
+    "category": "DSA",
+    "topic": "Stack",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "stack"
+    ]
+  },
+  {
+    "id": 3,
+    "question": "Merge Two Sorted Lists: Merge two sorted linked lists and return it as a sorted list. The list should be made by splicing together the nodes of the first two lists.",
+    "answer": "We use a 'Dummy' node to act as the start of our merged list and a 'Current' pointer to build it. We compare the heads of both lists, attach the smaller one to 'Current.next', and move that list's head forward. Repeat until one list is exhausted, then attach the remaining part of the other list. This takes O(n + m) time and O(1) extra space (not counting the output nodes).",
+    "counterQuestion": "How would you solve this recursively?",
+    "counterQuestionAnswer": "The recursive approach compares the heads: the smaller one becomes the head of the merged list, and its 'next' pointer is set to the result of recursively merging the remainder of the lists. This is elegant but uses O(n + m) stack space.",
+    "category": "DSA",
+    "topic": "Linked List",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "linked-list",
+      "recursion"
+    ]
+  },
+  {
+    "id": 4,
+    "question": "Best Time to Buy and Sell Stock: You are given an array prices where prices[i] is the price of a given stock on the ith day. You want to maximize your profit.",
+    "answer": "We use a 'One Pass' approach. We keep track of the 'min_price' seen so far and the 'max_profit' we could achieve if we sold today. For each price, we update 'min_price' if the current price is lower, and calculate 'profit = current_price - min_price'. We update 'max_profit' if this profit is higher. This is O(n) time and O(1) space.",
+    "counterQuestion": "What if you could buy and sell multiple times (Best Time to Buy and Sell Stock II)?",
+    "counterQuestionAnswer": "In that case, we use a 'Greedy' approach: whenever the price today is higher than yesterday, we add the difference to our total profit. This effectively captures all upward trends.",
+    "category": "DSA",
+    "topic": "Sliding Window",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "array",
+      "dynamic-programming"
+    ]
+  },
+  {
+    "id": 5,
+    "question": "Valid Palindrome: Given a string s, return true if it is a palindrome, considering only alphanumeric characters and ignoring cases.",
+    "answer": "The most efficient way is using two pointers: one at the start and one at the end. We move them toward the center, skipping non-alphanumeric characters. At each step, we compare the characters (lowercased). If they don't match, it's not a palindrome. This is O(n) time and O(1) space.",
+    "counterQuestion": "How does Python's slicing compare to the two-pointer approach for this problem?",
+    "counterQuestionAnswer": "Slicing `s[::-1]` is very fast in Python because it's implemented in C, but it requires O(n) extra space to create the reversed string. The two-pointer approach is more space-efficient.",
+    "category": "DSA",
+    "topic": "Two Pointers",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "string",
+      "two-pointers"
+    ]
+  },
+  {
+    "id": 6,
+    "question": "Invert Binary Tree: Given the root of a binary tree, invert the tree, and return its root.",
+    "answer": "We can use recursion. For each node, we swap its left and right children, and then recursively call the function on the left and right subtrees. This is a simple DFS approach. Time complexity is O(n) as we visit every node, and space complexity is O(h) for the recursion stack where h is the tree height.",
+    "counterQuestion": "How would you solve this iteratively?",
+    "counterQuestionAnswer": "We can use a Queue (for BFS) or a Stack (for DFS). We push the root onto the queue, then while the queue isn't empty, we pop a node, swap its children, and push any non-null children onto the queue. This is O(n) time and O(w) space, where w is the maximum width of the tree.",
+    "category": "DSA",
+    "topic": "Trees",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "binary-tree",
+      "dfs"
+    ]
+  },
+  {
+    "id": 7,
+    "question": "Valid Anagram: Given two strings s and t, return true if t is an anagram of s, and false otherwise.",
+    "answer": "The most efficient way is to use a frequency counter (hash map or an array of size 26). We count occurrences of each character in 's' and decrement counts for characters in 't'. If all counts are zero at the end, they are anagrams. This is O(n) time and O(1) space (since the alphabet size is constant).",
+    "counterQuestion": "Could you use sorting to solve this? What's the trade-off?",
+    "counterQuestionAnswer": "Yes, we can sort both strings and compare them. Sorting takes O(n log n) time and O(1) or O(n) space depending on the sorting algorithm. It's cleaner to write but slower than the frequency counter.",
+    "category": "DSA",
+    "topic": "Arrays & Hashing",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "string",
+      "hashmap"
+    ]
+  },
+  {
+    "id": 8,
+    "question": "Binary Search: Given an array of integers nums which is sorted in ascending order, and an integer target, write a function to search target in nums.",
+    "answer": "We use the classic Divide and Conquer approach. Maintain 'low' and 'high' pointers. In each step, calculate 'mid'. If `nums[mid] == target`, we're done. If `nums[mid] < target`, move 'low' to `mid + 1`. Otherwise, move 'high' to `mid - 1`. This is O(log n) time and O(1) space.",
+    "counterQuestion": "How do you avoid integer overflow when calculating 'mid' in languages like C++ or Java?",
+    "counterQuestionAnswer": "Instead of `(low + high) / 2`, you should use `low + (high - low) / 2`. This prevents the sum from exceeding the maximum integer value.",
+    "category": "DSA",
+    "topic": "Binary Search",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "binary-search",
+      "algorithm"
+    ]
+  },
+  {
+    "id": 9,
+    "question": "Linked List Cycle: Given head, the head of a linked list, determine if the linked list has a cycle in it.",
+    "answer": "We use Floyd's Tortoise and Hare algorithm. We have two pointers, 'slow' and 'fast'. 'slow' moves one step at a time, 'fast' moves two. If there's a cycle, the 'fast' pointer will eventually 'lap' the 'slow' pointer and they will meet. If 'fast' reaches the end (null), there is no cycle. This is O(n) time and O(1) space.",
+    "counterQuestion": "How would you find the exact node where the cycle begins?",
+    "counterQuestionAnswer": "Once the pointers meet, reset the 'slow' pointer to the head. Keep 'fast' at the meeting point. Move both pointers one step at a time. The node where they meet again is the start of the cycle.",
+    "category": "DSA",
+    "topic": "Linked List",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "pointers",
+      "cycle-detection"
+    ]
+  },
+  {
+    "id": 10,
+    "question": "Lowest Common Ancestor of a Binary Search Tree: Given a binary search tree (BST), find the lowest common ancestor (LCA) of two given nodes in the BST.",
+    "answer": "In a BST, we can use the property that nodes to the left are smaller and nodes to the right are larger. Starting from the root, if both nodes are smaller than the current node, move to the left child. If both are larger, move to the right child. If they split (one smaller, one larger) or one matches the current node, the current node is the LCA. This is O(h) time and O(1) space.",
+    "counterQuestion": "Does this logic work for a regular Binary Tree (not a BST)?",
+    "counterQuestionAnswer": "No, for a regular tree, we'd need to use a recursive DFS approach where we check if either node exists in the left or right subtrees. If both return non-null, the current node is the LCA.",
+    "category": "DSA",
+    "topic": "Trees",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "bst",
+      "binary-tree"
+    ]
+  },
+  {
+    "id": 11,
+    "question": "Balanced Binary Tree: Given a binary tree, determine if it is height-balanced (depth of subtrees never differs by more than 1).",
+    "answer": "We use a bottom-up DFS. For each node, we recursively find the height of its left and right subtrees. If any subtree is unbalanced, we propagate -1 up. Otherwise, we check if the difference is > 1. If it is, return -1. Otherwise, return the height `max(left, right) + 1`. This is O(n) time because each node is visited once.",
+    "counterQuestion": "What is the time complexity if you use a top-down approach calling 'height' on every node?",
+    "counterQuestionAnswer": "A top-down approach would be O(n^2) in the worst case (a skewed tree) because 'height' is called repeatedly on the same nodes. The bottom-up approach is much more efficient.",
+    "category": "DSA",
+    "topic": "Trees",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "binary-tree",
+      "dfs"
+    ]
+  },
+  {
+    "id": 12,
+    "question": "Maximum Subarray: Given an integer array nums, find the contiguous subarray (containing at least one number) which has the largest sum.",
+    "answer": "We use Kadane's Algorithm. We maintain 'current_sum' and 'max_sum'. For each number, we decide whether to add it to 'current_sum' or start a new subarray with the current number (`current_sum = max(num, current_sum + num)`). Then we update `max_sum = max(max_sum, current_sum)`. This is O(n) time and O(1) space.",
+    "counterQuestion": "Can you solve this using Divide and Conquer? What's the complexity?",
+    "counterQuestionAnswer": "Yes, using Divide and Conquer, we split the array and find the max subarray in left half, right half, and the one crossing the midpoint. This takes O(n log n) time.",
+    "category": "DSA",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "kadane",
+      "array"
+    ]
+  },
+  {
+    "id": 13,
+    "question": "Climbing Stairs: You are climbing a staircase. It takes n steps to reach the top. Each time you can either climb 1 or 2 steps. How many distinct ways can you climb to the top?",
+    "answer": "This is a classic Dynamic Programming problem that follows the Fibonacci sequence. The number of ways to reach step 'n' is the sum of ways to reach step 'n-1' and 'n-2'. We can solve it using an array or just two variables to save space. This is O(n) time and O(1) space.",
+    "counterQuestion": "What if you could take up to 'k' steps at a time?",
+    "counterQuestionAnswer": "Then the recurrence becomes `ways[n] = ways[n-1] + ways[n-2] + ... + ways[n-k]`. We'd use a sliding window or a loop to sum the previous 'k' states.",
+    "category": "DSA",
+    "topic": "Dynamic Programming",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "fibonacci",
+      "dp"
+    ]
+  },
+  {
+    "id": 14,
+    "question": "Product of Array Except Self: Given an integer array nums, return an array answer such that answer[i] is equal to the product of all the elements of nums except nums[i].",
+    "answer": "We use two passes. In the first pass, we calculate the prefix product for each element. In the second pass (going backwards), we multiply by the suffix product. This allows us to get the result in O(n) time without using the division operator and with O(1) extra space (excluding the output array).",
+    "counterQuestion": "Why is the division operator forbidden in some versions of this interview question?",
+    "counterQuestionAnswer": "Using division would be trivial (`total_product / nums[i]`), but it fails if there are zeros in the array. The two-pass product method is robust and handles zeros correctly.",
+    "category": "DSA",
+    "topic": "Arrays & Hashing",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "array",
+      "prefix-product"
+    ]
+  },
+  {
+    "id": 15,
+    "question": "3Sum: Given an integer array nums, return all the triplets [nums[i], nums[j], nums[k]] such that i != j, i != k, and j != k, and nums[i] + nums[j] + nums[k] == 0.",
+    "answer": "First, we sort the array. Then we iterate through the array, fixing one number 'i'. For the remaining part of the array, we use two pointers ('low' and 'high') to find pairs that sum to `-nums[i]`. We must be careful to skip duplicate values to avoid duplicate triplets. This is O(n^2) time and O(1) or O(n) space depending on sorting.",
+    "counterQuestion": "Can you solve this with a Hash Map instead of two pointers?",
+    "counterQuestionAnswer": "Yes, but handling duplicates becomes much more complex with a hash map. Two pointers on a sorted array is the standard and most efficient way to handle duplicates and the sum constraint simultaneously.",
+    "category": "DSA",
+    "topic": "Two Pointers",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "array",
+      "three-pointers"
+    ]
+  },
+  {
+    "id": 16,
+    "question": "Longest Substring Without Repeating Characters: Given a string s, find the length of the longest substring without repeating characters.",
+    "answer": "We use a 'Sliding Window' with a hash map or set. We maintain a 'left' and 'right' pointer. As we move the 'right' pointer, we add characters to our map with their last seen index. If we see a character already in the map, we move the 'left' pointer to `max(left, map[char] + 1)`. The length is `right - left + 1`. This is O(n) time and O(min(m, n)) space where m is the alphabet size.",
+    "counterQuestion": "How would the space complexity change if you knew the string only contained lowercase English letters?",
+    "counterQuestionAnswer": "If the alphabet is fixed (like 26 letters), the space complexity becomes O(1) because our map/array will never exceed 26 entries.",
+    "category": "DSA",
+    "topic": "Sliding Window",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "string",
+      "sliding-window"
+    ]
+  },
+  {
+    "id": 17,
+    "question": "Group Anagrams: Given an array of strings strs, group the anagrams together. You can return the answer in any order.",
+    "answer": "We use a hash map where the keys are the sorted version of each string (or a character count tuple) and the values are lists of the original strings. After processing all strings, the map's values give us our groups. Using character counts as keys takes O(n * k) time, while sorting takes O(n * k log k), where n is the number of strings and k is the max string length.",
+    "counterQuestion": "Which key generation method is better if the strings are very long but the alphabet is small?",
+    "counterQuestionAnswer": "If strings are long, the character count (frequency array) is better because it's O(k) per string, whereas sorting is O(k log k).",
+    "category": "DSA",
+    "topic": "Arrays & Hashing",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "hashmap",
+      "string"
+    ]
+  },
+  {
+    "id": 18,
+    "question": "Container With Most Water: Given n non-negative integers height[i], where each represents a point at coordinate (i, height[i]). Find two lines that together with the x-axis forms a container, such that the container contains the most water.",
+    "answer": "We use Two Pointers, one at each end. The area is `min(height[left], height[right]) * (right - left)`. To find a larger area, we must move the pointer pointing to the shorter line, because that's the limiting factor for height. We keep track of the maximum area seen. This is O(n) time and O(1) space.",
+    "counterQuestion": "Why does moving the shorter line pointer guarantee we won't miss the optimal solution?",
+    "counterQuestionAnswer": "If we move the taller line's pointer, the width decreases, and the height can't increase (since it's limited by the shorter line). Thus, the area will always decrease. Only moving the shorter line gives a chance for a taller line to compensate for the lost width.",
+    "category": "DSA",
+    "topic": "Two Pointers",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "array",
+      "greedy"
+    ]
+  },
+  {
+    "id": 19,
+    "question": "Reverse Linked List: Given the head of a singly linked list, reverse the list, and return the reversed list.",
+    "answer": "We use three pointers: 'prev', 'curr', and 'next'. We iterate through the list; for each node, we save 'curr.next', set 'curr.next = prev', move 'prev' to 'curr', and 'curr' to the saved 'next'. At the end, 'prev' will be the new head. This is O(n) time and O(1) space.",
+    "counterQuestion": "Can you implement this recursively?",
+    "counterQuestionAnswer": "Yes. The base case is when the head or head.next is null. We recursively reverse the rest of the list, then set `head.next.next = head` and `head.next = null`. It's O(n) time but uses O(n) stack space.",
+    "category": "DSA",
+    "topic": "Linked List",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "linked-list"
+    ]
+  },
+  {
+    "id": 20,
+    "question": "Number of Islands: Given an m x n 2D binary grid which represents a map of '1's (land) and '0's (water), return the number of islands.",
+    "answer": "We iterate through every cell in the grid. When we find a '1', we increment our island count and trigger a DFS or BFS to mark all connected '1's as 'visited' (or change them to '0'). This ensures each island is counted only once. This is O(m * n) time and O(m * n) space in the worst case for the recursion stack.",
+    "counterQuestion": "How would you solve this using Union-Find?",
+    "counterQuestionAnswer": "Each '1' starts as its own component. We iterate through the grid and union adjacent '1's. The number of disjoint sets at the end (minus the water component) is the number of islands. Union-Find is often preferred for dynamic grids.",
+    "category": "DSA",
+    "topic": "Graphs",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "dfs",
+      "bfs",
+      "grid"
+    ]
+  },
+  {
+    "id": 21,
+    "question": "Top K Frequent Elements: Given an integer array nums and an integer k, return the k most frequent elements.",
+    "answer": "We first count frequencies using a hash map. Then we can either use a Min-Heap of size k (O(n log k)) or Bucket Sort (O(n)). In Bucket Sort, the frequency is the index, and each index contains a list of numbers with that frequency. We iterate backwards from the highest frequency to get the top k. This is O(n) time and space.",
+    "counterQuestion": "When would you prefer a Heap over Bucket Sort?",
+    "counterQuestionAnswer": "A Heap is better if the range of frequencies is extremely large and sparse, but for most competitive programming and interview cases, Bucket Sort is the fastest option for this problem.",
+    "category": "DSA",
+    "topic": "Arrays & Hashing",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "heap",
+      "bucket-sort"
+    ]
+  },
+  {
+    "id": 22,
+    "question": "Level Order Traversal: Given the root of a binary tree, return the level order traversal of its nodes' values. (i.e., from left to right, level by level).",
+    "answer": "We use a Queue for BFS. We push the root into the queue. While the queue is not empty, we record the current queue size (this represents nodes at the current level). We pop that many nodes, add their values to a list, and push their children into the queue. This is O(n) time and O(w) space where w is the tree's max width.",
+    "counterQuestion": "How would you modify this to return the values in 'Zigzag' order?",
+    "counterQuestionAnswer": "We can add a boolean flag 'reverse'. For each level, if 'reverse' is true, we reverse the list of values before adding it to the result, and flip the flag for the next level.",
+    "category": "DSA",
+    "topic": "Trees",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "bfs",
+      "binary-tree"
+    ]
+  },
+  {
+    "id": 23,
+    "question": "Coin Change: You are given an integer array coins representing coins of different denominations and an integer amount representing a total amount of money. Return the fewest number of coins that you need to make up that amount.",
+    "answer": "This is a DP problem. We create an array 'dp' of size 'amount + 1', initialized with infinity, and `dp[0] = 0`. For each amount from 1 to 'target', we check each coin: if `coin <= amount`, then `dp[amount] = min(dp[amount], dp[amount - coin] + 1)`. If `dp[amount]` remains infinity, return -1. This is O(amount * n_coins) time.",
+    "counterQuestion": "Can you solve this with BFS? Why would it work?",
+    "counterQuestionAnswer": "Yes, you can treat it as a shortest path problem in a graph where each node is an amount and edges are coin values. BFS finds the shortest path (fewest coins) naturally. It's often efficient if the amount is small.",
+    "category": "DSA",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "dp",
+      "bfs"
+    ]
+  },
+  {
+    "id": 24,
+    "question": "Course Schedule: There are a total of numCourses courses you have to take, labeled from 0 to numCourses - 1. Some courses have prerequisites. Return true if you can finish all courses.",
+    "answer": "This is a cycle detection problem in a Directed Graph. We use Kahn's Algorithm (BFS for Topological Sort). We calculate the 'in-degree' of each node. We push nodes with 0 in-degree into a queue. As we pop a node, we decrement the in-degree of its neighbors. If a neighbor's in-degree becomes 0, push it. If the number of nodes processed equals numCourses, there is no cycle. This is O(V + E) time.",
+    "counterQuestion": "How would you solve this using DFS?",
+    "counterQuestionAnswer": "We use DFS with three states for each node: unvisited, visiting (on current path), and visited. If we encounter a node in the 'visiting' state during DFS, a cycle exists.",
+    "category": "DSA",
+    "topic": "Graphs",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "topological-sort",
+      "cycle-detection"
+    ]
+  },
+  {
+    "id": 25,
+    "question": "Search in Rotated Sorted Array: Given the array nums after a possible rotation and an integer target, return the index of target if it is in nums, or -1 if it is not in nums.",
+    "answer": "We use a modified Binary Search. In each step, we identify which half (left or right) is sorted. If `nums[low] <= nums[mid]`, the left half is sorted. We then check if the target lies within this sorted half. If not, it must be in the right half. If the left isn't sorted, the right half must be. This logic allows O(log n) search despite the rotation.",
+    "counterQuestion": "What if the array contains duplicates (Search in Rotated Sorted Array II)?",
+    "counterQuestionAnswer": "Duplicates can make it impossible to determine which half is sorted if `nums[low] == nums[mid] == nums[high]`. In that specific case, we just move the pointers by one, which degrades the worst-case time complexity to O(n).",
+    "category": "DSA",
+    "topic": "Binary Search",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "search",
+      "array"
+    ]
+  },
+  {
+    "id": 26,
+    "question": "Word Search: Given an m x n grid of characters board and a string word, return true if word exists in the grid.",
+    "answer": "We use Backtracking (DFS). For each cell, if it matches the first letter of the word, we start a DFS to explore neighbors. We mark the current cell as 'visited' (e.g., by changing it to '#') to avoid reusing it, then recursively check the next letter in the word. If the DFS returns true, we're done. Otherwise, we backtrack by restoring the cell's original value. This is O(N * 3^L) where N is cells and L is word length.",
+    "counterQuestion": "How do you optimize this to avoid redundant checks?",
+    "counterQuestionAnswer": "We can check if the total counts of characters in the word are present in the board first. Also, if the word's suffix has fewer characters in the board than its prefix, we can reverse the word to search from the other end.",
+    "category": "DSA",
+    "topic": "Backtracking",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "dfs",
+      "backtracking"
+    ]
+  },
+  {
+    "id": 27,
+    "question": "Pacific Atlantic Water Flow: Given an m x n matrix of heights, find all cells where water can flow to both the Pacific and Atlantic oceans.",
+    "answer": "Instead of checking each cell, we work backwards from the oceans. We perform a DFS/BFS starting from the Pacific borders (top and left) to find all reachable cells. We do the same for the Atlantic borders (bottom and right). The intersection of these two sets of cells is the answer. This is O(m * n) time and space.",
+    "counterQuestion": "Why is working backwards more efficient than checking each cell individually?",
+    "counterQuestionAnswer": "Checking each cell individually would take O((m * n)^2) because each DFS could visit all cells. Working from the borders ensures each cell is processed at most twice (once for each ocean).",
+    "category": "DSA",
+    "topic": "Graphs",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "dfs",
+      "bfs"
+    ]
+  },
+  {
+    "id": 28,
+    "question": "Longest Consecutive Sequence: Given an unsorted array of integers nums, return the length of the longest consecutive elements sequence.",
+    "answer": "We put all numbers into a Hash Set. Then we iterate through the array. For each number, if `num - 1` is not in the set, it means `num` is the start of a potential sequence. We then count how many consecutive numbers follow it (`num + 1`, `num + 2`, etc.). This ensures we only 'start' counting from the beginning of each sequence. This is O(n) time and O(n) space.",
+    "counterQuestion": "Can you solve this by sorting? What's the trade-off?",
+    "counterQuestionAnswer": "Yes, sorting would take O(n log n). While slower than the hash set approach, it uses O(1) extra space (if sorting is in-place).",
+    "category": "DSA",
+    "topic": "Arrays & Hashing",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "hashset",
+      "array"
+    ]
+  },
+  {
+    "id": 29,
+    "question": "Serialize and Deserialize Binary Tree: Design an algorithm to serialize and deserialize a binary tree.",
+    "answer": "We can use Level Order Traversal (BFS) or Pre-order Traversal (DFS). In serialization, we convert the tree into a string, using 'null' or '#' for empty nodes. In deserialization, we use the same traversal order to rebuild the tree. BFS is often easier to implement with a queue. This is O(n) time and space.",
+    "counterQuestion": "What is the advantage of using Pre-order DFS for serialization?",
+    "counterQuestionAnswer": "Pre-order DFS is very compact and can be easily implemented recursively. It allows you to rebuild the root, then the entire left subtree, then the entire right subtree in a clear, nested structure.",
+    "category": "DSA",
+    "topic": "Trees",
+    "difficulty": "Hard",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "serialization",
+      "binary-tree"
+    ]
+  },
+  {
+    "id": 30,
+    "question": "Clone Graph: Given a reference of a node in a connected undirected graph, return a deep copy (clone) of the graph.",
+    "answer": "We use a Hash Map to store the mapping from original nodes to their clones. We can use either DFS or BFS. When we visit a node, if it's not in the map, we create a clone and add it to the map. Then we recursively (or via queue) clone all its neighbors and add them to the clone's neighbor list. This is O(V + E) time and O(V) space.",
+    "counterQuestion": "How do you handle cycles during cloning?",
+    "counterQuestionAnswer": "The hash map handles cycles. Before cloning a node, we check if it's already in the map. If it is, we simply return the existing clone instead of creating a new one or recursing further.",
+    "category": "DSA",
+    "topic": "Graphs",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "clone",
+      "hashmap"
+    ]
+  },
+  {
+    "id": 31,
+    "question": "Trie (Prefix Tree) Implementation: Implement a trie with insert, search, and startsWith methods.",
+    "answer": "A Trie is a tree structure where each node represents a character. Each node has a map or array of children (26 for lowercase English) and a boolean 'isEndOfWord'. 'insert' adds characters node by node. 'search' follows the path and checks 'isEndOfWord'. 'startsWith' just checks if the path exists. All operations are O(L) where L is the length of the word.",
+    "counterQuestion": "When is a Trie more efficient than a Hash Map for strings?",
+    "counterQuestionAnswer": "A Trie is better for prefix-based searches ('startsWith') and can save space if many words share common prefixes. It also allows for sorted iteration of strings.",
+    "category": "DSA",
+    "topic": "Tries",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "trie",
+      "prefix-tree"
+    ]
+  },
+  {
+    "id": 32,
+    "question": "Non-overlapping Intervals: Given an array of intervals intervals, return the minimum number of intervals you need to remove to make the rest of the intervals non-overlapping.",
+    "answer": "This is a Greedy problem. We sort the intervals by their 'end' times. We keep track of the end time of the last added interval. For each new interval, if its start time is >= the last end time, it doesn't overlap, so we keep it and update the last end time. Otherwise, it overlaps, so we 'remove' it (increment count). Sorting by end time is key. This is O(n log n) time.",
+    "counterQuestion": "Why sort by end time instead of start time?",
+    "counterQuestionAnswer": "Sorting by end time allows us to leave as much room as possible for subsequent intervals. If we sorted by start time, a very long interval that starts early could block many shorter intervals that end early.",
+    "category": "DSA",
+    "topic": "Intervals",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "greedy",
+      "intervals"
+    ]
+  },
+  {
+    "id": 33,
+    "question": "Meeting Rooms II: Given an array of meeting time intervals consisting of start and end times, find the minimum number of conference rooms required.",
+    "answer": "We can use a Min-Heap or sort start and end times separately. With the sorting approach, we have two pointers for 'starts' and 'ends'. We iterate through the start times; if a meeting starts before the earliest meeting ends, we need a new room. Otherwise, we can reuse a room (move the 'end' pointer). This is O(n log n) time.",
+    "counterQuestion": "How does the Min-Heap approach work?",
+    "counterQuestionAnswer": "Sort intervals by start time. Use a Min-Heap to store end times of active meetings. For each meeting, if its start time >= heap.top(), we pop (room freed). Then we push the current meeting's end time. The maximum heap size is the number of rooms needed.",
+    "category": "DSA",
+    "topic": "Intervals",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "intervals",
+      "heap"
+    ]
+  },
+  {
+    "id": 34,
+    "question": "Merge Intervals: Given an array of intervals, merge all overlapping intervals.",
+    "answer": "First, sort the intervals by their 'start' times. We maintain a 'merged' list. For each interval, if it's the first one or doesn't overlap with the last interval in 'merged' (`curr.start > last.end`), we add it. Otherwise, we merge them by updating the 'end' of the last interval to `max(last.end, curr.end)`. This is O(n log n) time.",
+    "counterQuestion": "Can this be done in O(n) if the intervals are already sorted?",
+    "counterQuestionAnswer": "Yes, if the intervals are sorted by start time, we can merge them in a single linear pass (O(n)).",
+    "category": "DSA",
+    "topic": "Intervals",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "intervals",
+      "sorting"
+    ]
+  },
+  {
+    "id": 35,
+    "question": "Longest Repeating Character Replacement: You are given a string s and an integer k. You can choose any character of the string and change it to any other uppercase English character at most k times.",
+    "answer": "We use a Sliding Window. We maintain a frequency map of characters in the current window and track 'max_freq' (the count of the most frequent character in the current window). If `window_length - max_freq > k`, the current window is invalid, so we shrink it from the left. The result is the max window size. This is O(n) time.",
+    "counterQuestion": "Do we need to decrement 'max_freq' when we shrink the window from the left?",
+    "counterQuestionAnswer": "Surprisingly, no. Even if 'max_freq' is no longer accurate for the current window, we only care if we find a *larger* 'max_freq' to potentially increase our overall maximum window size. This is a common sliding window optimization.",
+    "category": "DSA",
+    "topic": "Sliding Window",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "sliding-window",
+      "string"
+    ]
+  },
+  {
+    "id": 36,
+    "question": "Find Minimum in Rotated Sorted Array: Given the sorted rotated array nums of unique elements, return the minimum element of this array.",
+    "answer": "We use Binary Search. We check `nums[mid]`. If `nums[mid] > nums[right]`, the minimum must be in the right half (because the rotation happened there). Otherwise, it must be in the left half or it's `nums[mid]` itself (`right = mid`). This narrows down the range until `low == high`. This is O(log n) time.",
+    "counterQuestion": "What if the array is not rotated?",
+    "counterQuestionAnswer": "The logic still works! `nums[mid]` will be less than `nums[right]`, so `right` will move toward the left, eventually landing on the first element.",
+    "category": "DSA",
+    "topic": "Binary Search",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "binary-search",
+      "array"
+    ]
+  },
+  {
+    "id": 37,
+    "question": "Rotate Image: You are given an n x n 2D matrix representing an image, rotate the image by 90 degrees (clockwise).",
+    "answer": "To rotate in-place, we first Transpose the matrix (swap `matrix[i][j]` with `matrix[j][i]`). Then, we reverse each row. This effectively performs a 90-degree clockwise rotation. Both steps are O(n^2) time and O(1) space.",
+    "counterQuestion": "How would you rotate it 90 degrees counter-clockwise?",
+    "counterQuestionAnswer": "To rotate counter-clockwise, you can either reverse each row and then transpose, or transpose and then reverse each column.",
+    "category": "DSA",
+    "topic": "Arrays",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "matrix",
+      "math"
+    ]
+  },
+  {
+    "id": 38,
+    "question": "House Robber: You are a professional robber planning to rob houses along a street. Each house has a certain amount of money stashed. You cannot rob two adjacent houses.",
+    "answer": "This is a DP problem. Let `dp[i]` be the max money robbed up to house `i`. `dp[i] = max(dp[i-1], dp[i-2] + current_house_value)`. We only need the last two values to calculate the next, so we can solve it in O(n) time and O(1) space using two variables.",
+    "counterQuestion": "What if the houses are arranged in a circle (House Robber II)?",
+    "counterQuestionAnswer": "If houses are in a circle, we can't rob both the first and last house. We solve the problem twice: once excluding the first house and once excluding the last house. The answer is the maximum of these two results.",
+    "category": "DSA",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "dp",
+      "house-robber"
+    ]
+  },
+  {
+    "id": 39,
+    "question": "Jump Game: You are given an integer array nums. You are initially positioned at the array's first index. Each element represents your maximum jump length at that position. Can you reach the last index?",
+    "answer": "We use a Greedy approach. We maintain a 'goal' variable, initially set to the last index. We iterate backwards from the second-to-last element. If the current position plus its jump length can reach or pass the 'goal', we move the 'goal' to the current position. If 'goal' reaches 0, we can reach the end. This is O(n) time.",
+    "counterQuestion": "Can you solve this with BFS? What's the trade-off?",
+    "counterQuestionAnswer": "Yes, BFS can find the minimum number of jumps (Jump Game II). However, for a simple reachability check, the Greedy backward approach is much faster and simpler.",
+    "category": "DSA",
+    "topic": "Greedy",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "greedy",
+      "dynamic-programming"
+    ]
+  },
+  {
+    "id": 40,
+    "question": "Word Break: Given a string s and a dictionary of strings wordDict, return true if s can be segmented into a space-separated sequence of one or more dictionary words.",
+    "answer": "We use DP. `dp[i]` is true if the prefix of length `i` can be broken. For each `i` from 1 to `len(s)`, we check all `j < i`: if `dp[j]` is true and `s[j:i]` is in `wordDict`, then `dp[i]` is true. We can optimize by only checking `j` such that `i - j` is within the lengths of words in the dictionary. This is O(n^2) time.",
+    "counterQuestion": "How would you use a Trie to optimize this?",
+    "counterQuestionAnswer": "We can store `wordDict` in a Trie. For each starting position `j`, we traverse the Trie using characters from `s[j:]`. This can be faster if words in the dictionary share many prefixes.",
+    "category": "DSA",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "dp",
+      "string"
+    ]
+  },
+  {
+    "id": 41,
+    "question": "Number of 1 Bits: Write a function that takes an unsigned integer and returns the number of '1' bits it has (also known as the Hamming weight).",
+    "answer": "The most efficient way is using Brian Kernighan's Algorithm: `n = n & (n - 1)`. This operation flips the least-significant set bit to 0. We count how many times we can do this until `n` becomes 0. This is O(number of set bits), which is very fast.",
+    "counterQuestion": "How would you do this using a simple bit shift?",
+    "counterQuestionAnswer": "You can iterate 32 times, check the last bit using `n & 1`, and shift `n` right by 1 each time. This is always O(32), regardless of how many bits are set.",
+    "category": "DSA",
+    "topic": "Bit Manipulation",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "bit-manipulation"
+    ]
+  },
+  {
+    "id": 42,
+    "question": "Counting Bits: Given an integer n, return an array of length n + 1 such that ans[i] is the number of 1 bits in the binary representation of i.",
+    "answer": "We use DP. The number of bits in `i` is `1 + bits in (i & (i-1))` or `(i % 2) + bits in (i // 2)`. The first one is more elegant: `dp[i] = dp[i & (i - 1)] + 1`. This allows us to calculate each value in O(1) time using previously computed results. Total time is O(n).",
+    "counterQuestion": "What is the relationship between `dp[i]` and `dp[i >> 1]`?",
+    "counterQuestionAnswer": "`dp[i] = dp[i >> 1] + (i & 1)`. This means the number of bits is the same as the number shifted right, plus 1 if the original number was odd. This is another O(1) DP transition.",
+    "category": "DSA",
+    "topic": "Bit Manipulation",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "dp",
+      "bit-manipulation"
+    ]
+  },
+  {
+    "id": 43,
+    "question": "Missing Number: Given an array nums containing n distinct numbers in the range [0, n], return the only number in the range that is missing from the array.",
+    "answer": "We can use XOR. XORing a number with itself results in 0. We XOR all numbers from 0 to n, and all numbers in the input array. The result will be the missing number because all other numbers will appear twice and cancel out. This is O(n) time and O(1) space.",
+    "counterQuestion": "Can you solve this using Gauss's Sum Formula?",
+    "counterQuestionAnswer": "Yes. The sum of 0 to n is `(n * (n + 1)) / 2`. Subtract the sum of the array from this value to get the missing number. This is also O(n) time and O(1) space.",
+    "category": "DSA",
+    "topic": "Bit Manipulation",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "math",
+      "bit-manipulation"
+    ]
+  },
+  {
+    "id": 44,
+    "question": "Reverse Bits: Reverse bits of a given 32 bits unsigned integer.",
+    "answer": "We iterate 32 times. In each step, we shift the result left, add the last bit of the input (`n & 1`), and shift the input right. This builds the reversed number bit by bit. This is O(1) (fixed 32 iterations) and O(1) space.",
+    "counterQuestion": "How would you optimize this if you had to reverse bits for millions of numbers?",
+    "counterQuestionAnswer": "We could use a lookup table for 8-bit or 16-bit segments. Reverse each segment using the table and then combine them in reversed order. This trades space for speed.",
+    "category": "DSA",
+    "topic": "Bit Manipulation",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "bit-manipulation"
+    ]
+  },
+  {
+    "id": 45,
+    "question": "Sum of Two Integers: Given two integers a and b, return the sum of the two integers without using the operators + and -.",
+    "answer": "We use bitwise XOR to find the sum without carries, and bitwise AND followed by a left shift to find the carries. We repeat `a = (a ^ b)` and `b = (a & b) << 1` until the carry (`b`) becomes 0. In Python, we must mask with `0xffffffff` to handle 32-bit integer overflow properly. This is O(1) for fixed-width integers.",
+    "counterQuestion": "Why is XOR used for addition?",
+    "counterQuestionAnswer": "XOR acts as an addition without carry (0+0=0, 0+1=1, 1+0=1, 1+1=0). The AND operation detects where both bits are 1, which is where a carry should be generated.",
+    "category": "DSA",
+    "topic": "Bit Manipulation",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "bit-manipulation",
+      "math"
+    ]
+  },
+  {
+    "id": 46,
+    "question": "Subtree of Another Tree: Given the roots of two binary trees root and subRoot, return true if there is a subtree of root with the same structure and node values of subRoot.",
+    "answer": "We iterate through the main tree. For each node, we check if the tree starting at that node is identical to `subRoot` using a helper 'isSameTree' function. 'isSameTree' recursively checks if roots match and left/right subtrees match. This is O(M * N) time in the worst case where M and N are the number of nodes.",
+    "counterQuestion": "How could you solve this in O(M + N) time?",
+    "counterQuestionAnswer": "We can use Merkle Hashing or String Serialization with KMP. By converting both trees into strings (including null markers), we can use string matching algorithms to find the subtree in linear time.",
+    "category": "DSA",
+    "topic": "Trees",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "binary-tree",
+      "dfs"
+    ]
+  },
+  {
+    "id": 47,
+    "question": "Palindrome Number: Given an integer x, return true if x is a palindrome, and false otherwise.",
+    "answer": "Instead of converting to a string, we can reverse the second half of the number and compare it with the first half. We handle negative numbers and numbers ending in 0 (except 0 itself) as false immediately. Then we use `revertedNumber = revertedNumber * 10 + x % 10` while `x > revertedNumber`. This is O(log n) time and O(1) space.",
+    "counterQuestion": "Why do we only reverse half of the number?",
+    "counterQuestionAnswer": "Reversing the entire number could cause integer overflow in languages with fixed-width integers. Reversing only half avoids this and is slightly more efficient.",
+    "category": "DSA",
+    "topic": "Math",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "math",
+      "palindrome"
+    ]
+  },
+  {
+    "id": 48,
+    "question": "Min Stack: Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.",
+    "answer": "We use two stacks: a main stack for values and a 'min_stack' that stores the minimum value at each point in time. When we push a value, we push `min(value, min_stack.top())` onto the 'min_stack'. This ensures the current minimum is always at the top of the 'min_stack'. All operations are O(1) time and O(n) space.",
+    "counterQuestion": "Can you implement this using only one stack?",
+    "counterQuestionAnswer": "Yes, by storing the difference between the value and the current minimum, or by pushing pairs (value, current_min) onto the stack. Both still use O(n) extra space.",
+    "category": "DSA",
+    "topic": "Stack",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "stack",
+      "design"
+    ]
+  },
+  {
+    "id": 49,
+    "question": "Validate Binary Search Tree: Given the root of a binary tree, determine if it is a valid binary search tree (BST).",
+    "answer": "We use a recursive DFS with 'low' and 'high' bounds. For the root, bounds are -inf and +inf. For each node, we check if `low < node.val < high`. When going left, we update `high = node.val`. When going right, we update `low = node.val`. This ensures every node satisfies the BST property relative to all its ancestors. This is O(n) time.",
+    "counterQuestion": "Can you solve this using In-order Traversal?",
+    "counterQuestionAnswer": "Yes. An In-order traversal of a valid BST must result in a strictly increasing sequence. We can keep track of the 'prev' node value and ensure the current node is always larger.",
+    "category": "DSA",
+    "topic": "Trees",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "bst",
+      "binary-tree"
+    ]
+  },
+  {
+    "id": 50,
+    "question": "Lowest Common Ancestor of a Binary Tree: Given a binary tree, find the lowest common ancestor (LCA) of two given nodes p and q.",
+    "answer": "We use recursion. If the current node is null, or matches p or q, we return the current node. We recursively call the function on left and right children. If both calls return non-null, the current node is the LCA. If only one returns non-null, we propagate that value up. This is O(n) time and O(h) space.",
+    "counterQuestion": "How does this differ from the LCA of a BST?",
+    "counterQuestionAnswer": "In a BST, we can use the node values to decide which direction to go without searching the entire tree. In a regular binary tree, we must search both subtrees unless we find one of the nodes early.",
+    "category": "DSA",
+    "topic": "Trees",
+    "difficulty": "Medium",
+    "tags": [
+      "leetcode",
+      "blind75",
+      "binary-tree",
+      "dfs"
+    ]
+  },
+  {
+    "question": "Diameter of Binary Tree: Given the root of a binary tree, return the length of the diameter of the tree.",
+    "answer": "The diameter is the max value of (left_height + right_height) across all nodes. Use a bottom-up DFS that returns height and updates a global max. Time: O(n), Space: O(h).",
+    "counterQuestion": "Does the longest path always pass through the root?",
+    "counterQuestionAnswer": "No, it can be entirely within a subtree.",
+    "topic": "Trees",
+    "difficulty": "Easy",
+    "id": 51,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Subsets: Given an integer array nums of unique elements, return all possible subsets.",
+    "answer": "Use Backtracking. At each element, either include it or skip it. Time: O(n * 2^n), Space: O(n).",
+    "counterQuestion": "How many subsets are in a set of size n?",
+    "counterQuestionAnswer": "2^n subsets.",
+    "topic": "Backtracking",
+    "difficulty": "Medium",
+    "id": 52,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Combination Sum: Find all unique combinations that sum to target.",
+    "answer": "Use DFS with backtracking. Since elements can be reused, stay at the same index in recursive calls after adding an element. Time: O(2^target).",
+    "counterQuestion": "How do you avoid duplicate combinations?",
+    "counterQuestionAnswer": "By only picking elements at or after the current index.",
+    "topic": "Backtracking",
+    "difficulty": "Medium",
+    "id": 53,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Permutations: Return all possible permutations of an array.",
+    "answer": "Backtracking with a 'used' set. Iterate through all numbers; if not used, add to path, recurse, then backtrack. Time: O(n * n!).",
+    "counterQuestion": "How to handle duplicates in the input?",
+    "counterQuestionAnswer": "Sort and skip duplicates if the previous identical element hasn't been used.",
+    "topic": "Backtracking",
+    "difficulty": "Medium",
+    "id": 54,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Kth Largest Element in an Array: Return the kth largest element.",
+    "answer": "Use a Min-Heap of size k (O(n log k)) or QuickSelect (O(n) avg). Time: O(n) avg.",
+    "counterQuestion": "When is a Heap better?",
+    "counterQuestionAnswer": "When handling a live stream of data.",
+    "topic": "Heap",
+    "difficulty": "Medium",
+    "id": 55,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Rotting Oranges: Min minutes until no fresh oranges remain.",
+    "answer": "BFS. Push all rotten oranges into queue. Level-by-level BFS increments time and rots neighbors. Time: O(m*n).",
+    "counterQuestion": "Why BFS?",
+    "counterQuestionAnswer": "BFS finds the shortest path (min time) in an unweighted graph with multiple sources.",
+    "topic": "Graphs",
+    "difficulty": "Medium",
+    "id": 56,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Longest Increasing Subsequence: Length of LIS in array.",
+    "answer": "DP: dp[i] is LIS ending at i. Check all j < i. Time: O(n^2). Binary search version is O(n log n).",
+    "counterQuestion": "Can you reconstruct the sequence?",
+    "counterQuestionAnswer": "Yes, using a parent pointer array.",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "id": 57,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Word Ladder: Shortest transformation sequence from beginWord to endWord.",
+    "answer": "BFS on unweighted graph. Change each letter and check dictionary. Time: O(n * m^2).",
+    "counterQuestion": "How to optimize neighbor search?",
+    "counterQuestionAnswer": "Use pattern-based hashing (e.g., '*ot').",
+    "topic": "Graphs",
+    "difficulty": "Hard",
+    "id": 58,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Unique Paths: Number of paths to reach bottom-right of m x n grid.",
+    "answer": "DP: dp[i][j] = dp[i-1][j] + dp[i][j-1]. Or use combinatorics: (m+n-2)C(m-1).",
+    "counterQuestion": "What if there are obstacles?",
+    "counterQuestionAnswer": "Set dp[i][j] to 0 for obstacle cells.",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "id": 59,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Binary Tree Right Side View: Nodes seen from the right.",
+    "answer": "BFS: last node of each level. DFS: Root-Right-Left, first node seen at each depth. Time: O(n).",
+    "counterQuestion": "Which is better for space in a wide tree?",
+    "counterQuestionAnswer": "DFS is better for space in wide trees.",
+    "topic": "Trees",
+    "difficulty": "Medium",
+    "id": 60,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Longest Palindromic Substring: Return longest palindrome in s.",
+    "answer": "Expand around center for each char/gap. Time: O(n^2). Manacher's is O(n).",
+    "counterQuestion": "How to use DP?",
+    "counterQuestionAnswer": "dp[i][j] is true if s[i:j+1] is a palindrome.",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "id": 61,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Course Schedule II: Return the ordering of courses.",
+    "answer": "BFS Topological Sort (Kahn's). If result size != numCourses, return empty. Time: O(V+E).",
+    "counterQuestion": "What does a cycle mean?",
+    "counterQuestionAnswer": "It means a circular dependency, impossible to complete.",
+    "topic": "Graphs",
+    "difficulty": "Medium",
+    "id": 62,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Task Scheduler: Min intervals to finish tasks with cooldown n.",
+    "answer": "Max-Heap and frequency map. Idle slots determined by most frequent task. Time: O(n).",
+    "counterQuestion": "What if n=0?",
+    "counterQuestionAnswer": "Result is just the total number of tasks.",
+    "topic": "Heap",
+    "difficulty": "Medium",
+    "id": 63,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Search a 2D Matrix: Target in sorted m x n matrix.",
+    "answer": "If strictly sorted, treat as 1D and binary search. If row/col sorted, start top-right and move left/down. Time: O(m+n).",
+    "counterQuestion": "Why top-right?",
+    "counterQuestionAnswer": "Provides a clear decision (smaller -> left, larger -> down).",
+    "topic": "Binary Search",
+    "difficulty": "Medium",
+    "id": 64,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Koko Eating Bananas: Min speed k to eat all bananas within h hours.",
+    "answer": "Binary search on speed range [1, max_pile]. For each mid, check total hours. Time: O(n log(max_pile)).",
+    "counterQuestion": "Lower bound for k?",
+    "counterQuestionAnswer": "1 banana per hour or sum(piles)/h.",
+    "topic": "Binary Search",
+    "difficulty": "Medium",
+    "id": 65,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Merge K Sorted Lists: Merge k sorted linked lists.",
+    "answer": "Min-Heap of list heads. Pop smallest, add to result, push next. Time: O(n log k).",
+    "counterQuestion": "Divide and Conquer approach?",
+    "counterQuestionAnswer": "Merge pairs of lists recursively. Also O(n log k).",
+    "topic": "Linked List",
+    "difficulty": "Hard",
+    "id": 66,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Sliding Window Maximum: Max in each sliding window of size k.",
+    "answer": "Deque for indices in decreasing value order. Remove old and smaller indices. Time: O(n).",
+    "counterQuestion": "Space complexity?",
+    "counterQuestionAnswer": "O(k) for the deque.",
+    "topic": "Sliding Window",
+    "difficulty": "Hard",
+    "id": 67,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Trapping Rain Water: Rain water trapped between bars.",
+    "answer": "Two Pointers with left_max and right_max. Move smaller max. Time: O(n), Space: O(1).",
+    "counterQuestion": "Can you use a Stack?",
+    "counterQuestionAnswer": "Yes, a monotonic decreasing stack.",
+    "topic": "Two Pointers",
+    "difficulty": "Hard",
+    "id": 68,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Minimum Window Substring: Min window in s containing all chars of t.",
+    "answer": "Sliding Window with have/need counters. Expand right, shrink left. Time: O(n).",
+    "counterQuestion": "How to check validity?",
+    "counterQuestionAnswer": "Increment 'have' when a char's count matches required count.",
+    "topic": "Sliding Window",
+    "difficulty": "Hard",
+    "id": 69,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Reorder List: Reorder L0 -> Ln -> L1 -> Ln-1...",
+    "answer": "Find middle, reverse second half, merge halves. Time: O(n), Space: O(1).",
+    "counterQuestion": "How to reverse second half?",
+    "counterQuestionAnswer": "Standard iterative linked list reversal.",
+    "topic": "Linked List",
+    "difficulty": "Medium",
+    "id": 70,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Copy List with Random Pointer: Deep copy with random pointers.",
+    "answer": "Hash map (old -> new) or interleaving nodes and separating. Time: O(n).",
+    "counterQuestion": "Space for interleaving?",
+    "counterQuestionAnswer": "O(1) extra space.",
+    "topic": "Linked List",
+    "difficulty": "Medium",
+    "id": 71,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Max Product Subarray: Largest product subarray.",
+    "answer": "Track current_max and current_min (swap on negative). Time: O(n), Space: O(1).",
+    "counterQuestion": "Why track min?",
+    "counterQuestionAnswer": "Negative * negative = positive (potential new max).",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "id": 72,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Partition Equal Subset Sum: Partition array into two equal sums.",
+    "answer": "0/1 Knapsack for target sum = total/2. Use set for reachable sums. Time: O(n * total).",
+    "counterQuestion": "Odd sum case?",
+    "counterQuestionAnswer": "Return false immediately.",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "id": 73,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Coin Change II: Ways to make target using denominations.",
+    "answer": "DP: for each coin, iterate coin to amount and increment dp[i]. Time: O(n * amount).",
+    "counterQuestion": "Why coins first?",
+    "counterQuestionAnswer": "To count combinations, not permutations.",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "id": 74,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Longest Common Subsequence: Length of LCS between two strings.",
+    "answer": "2D DP: If match, 1 + dp[i-1][j-1]. Else, max(up, left). Time: O(m*n).",
+    "counterQuestion": "Space optimization?",
+    "counterQuestionAnswer": "Use only two rows: O(min(m, n)).",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "id": 75,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Longest Increasing Path in a Matrix: Return length of LIP.",
+    "answer": "DFS with Memoization. Store LIP for each cell. Time: O(m*n).",
+    "counterQuestion": "Base case?",
+    "counterQuestionAnswer": "Cell with no larger neighbors (LIP = 1).",
+    "topic": "Dynamic Programming",
+    "difficulty": "Hard",
+    "id": 76,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Burst Balloons: Max coins from bursting balloons.",
+    "answer": "Interval DP. Pick balloon k to burst last in interval [i, j]. Time: O(n^3).",
+    "counterQuestion": "Why burst last?",
+    "counterQuestionAnswer": "Keep boundaries intact for the internal subproblems.",
+    "topic": "Dynamic Programming",
+    "difficulty": "Hard",
+    "id": 77,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Min Cost to Connect All Points: MST problem.",
+    "answer": "Prim's with Min-Heap or Kruskal's with Union-Find. Time: O(n^2 log n).",
+    "counterQuestion": "Manhattan distance formula?",
+    "counterQuestionAnswer": "|x1-x2| + |y1-y2|.",
+    "topic": "Graphs",
+    "difficulty": "Medium",
+    "id": 78,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Network Delay Time: Signal travel time for all nodes to receive from k.",
+    "answer": "Dijkstra's with Min-Heap. Return max of shortest paths. Time: O(E log V).",
+    "counterQuestion": "Negative weight case?",
+    "counterQuestionAnswer": "Use Bellman-Ford.",
+    "topic": "Graphs",
+    "difficulty": "Medium",
+    "id": 79,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Swim in Rising Water: Min time to reach bottom-right.",
+    "answer": "Modified Dijkstra. Heap distance is max(path_depth, current_depth). Time: O(n^2 log n).",
+    "counterQuestion": "Binary search approach?",
+    "counterQuestionAnswer": "Search time in [0, max_depth] and check reachability.",
+    "topic": "Graphs",
+    "difficulty": "Hard",
+    "id": 80,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Alien Dictionary: Order of characters in alien language.",
+    "answer": "Build directed graph from word differences. BFS/DFS Topological Sort. Time: O(Total chars).",
+    "counterQuestion": "Invalid case?",
+    "counterQuestionAnswer": "Prefix after longer word or cycle found.",
+    "topic": "Graphs",
+    "difficulty": "Hard",
+    "id": 81,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Cheapest Flights Within K Stops: Min cost with at most k stops.",
+    "answer": "Bellman-Ford for k+1 iterations. Time: O(k * E).",
+    "counterQuestion": "Why not Dijkstra?",
+    "counterQuestionAnswer": "Standard Dijkstra doesn't account for stop limit correctly.",
+    "topic": "Graphs",
+    "difficulty": "Medium",
+    "id": 82,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Redundant Connection: Edge that can be removed to turn graph into tree.",
+    "answer": "Union-Find. Edge creating a cycle is redundant. Time: O(E alpha(V)).",
+    "counterQuestion": "Is the graph connected?",
+    "counterQuestionAnswer": "Yes, otherwise it wouldn't become a single tree.",
+    "topic": "Graphs",
+    "difficulty": "Medium",
+    "id": 83,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Count Good Nodes in Binary Tree: Node >= max in path from root.",
+    "answer": "DFS. Pass max_so_far down. Increment if node.val >= max. Time: O(n).",
+    "counterQuestion": "Space complexity?",
+    "counterQuestionAnswer": "O(h) for the recursion stack.",
+    "topic": "Trees",
+    "difficulty": "Medium",
+    "id": 84,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Sudoku Solver: Fill board such that it is valid.",
+    "answer": "Backtracking. Try 1-9 in empty cells. Check row, col, and 3x3 box. Time: O(9^81).",
+    "counterQuestion": "How to optimize?",
+    "counterQuestionAnswer": "Bitmasks to track row/col/box availability.",
+    "topic": "Backtracking",
+    "difficulty": "Hard",
+    "id": 85,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "N-Queens: Place n non-attacking queens.",
+    "answer": "Backtracking. Track cols and diagonals in sets. Time: O(n!).",
+    "counterQuestion": "Diagonal representation?",
+    "counterQuestionAnswer": "r+c and r-c.",
+    "topic": "Backtracking",
+    "difficulty": "Hard",
+    "id": 86,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Daily Temperatures: Wait time for warmer temp.",
+    "answer": "Monotonic Decreasing Stack. Store indices. pop when warmer. Time: O(n).",
+    "counterQuestion": "Space complexity?",
+    "counterQuestionAnswer": "O(n) for the stack.",
+    "topic": "Stack",
+    "difficulty": "Medium",
+    "id": 87,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Evaluate Reverse Polish Notation: Eval RPN expression.",
+    "answer": "Stack. Push numbers. Pop two for operators. Time: O(n).",
+    "counterQuestion": "Operand order?",
+    "counterQuestionAnswer": "Second popped is left operand.",
+    "topic": "Stack",
+    "difficulty": "Medium",
+    "id": 88,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Kth Smallest Element in a BST: Find kth smallest node.",
+    "answer": "In-order traversal. Stop at kth element. Time: O(h+k).",
+    "counterQuestion": "Constant space solution?",
+    "counterQuestionAnswer": "Morris Traversal.",
+    "topic": "Trees",
+    "difficulty": "Medium",
+    "id": 89,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Valid Sudoku: Determine if a Sudoku board is valid.",
+    "answer": "Use sets for rows, cols, and 3x3 boxes. One pass to check all numbers. Time: O(1) (fixed 9x9).",
+    "counterQuestion": "Why 3x3 box index is `(r/3)*3 + c/3`?",
+    "counterQuestionAnswer": "It maps the 9x9 grid into 9 distinct 3x3 blocks indexed 0-8.",
+    "topic": "Arrays",
+    "difficulty": "Medium",
+    "id": 90,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Decode Ways: Number of ways to decode string of digits.",
+    "answer": "DP: ways[i] = ways[i-1] (if single digit valid) + ways[i-2] (if two digit valid). Time: O(n).",
+    "counterQuestion": "Handling '0'?",
+    "counterQuestionAnswer": "'0' only valid if preceded by '1' or '2'.",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "id": 91,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Binary Tree Level Order Traversal: Return levels of tree nodes.",
+    "answer": "BFS using Queue. Record queue size at each level. Time: O(n).",
+    "counterQuestion": "Space complexity?",
+    "counterQuestionAnswer": "O(w) where w is max width.",
+    "topic": "Trees",
+    "difficulty": "Medium",
+    "id": 92,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Binary Tree Maximum Path Sum: Max sum of any path.",
+    "answer": "DFS returns max branch sum. update global max with `node.val + left + right`. Time: O(n).",
+    "counterQuestion": "Can path have negative values?",
+    "counterQuestionAnswer": "Yes, so return 0 if branch sum is negative.",
+    "topic": "Trees",
+    "difficulty": "Hard",
+    "id": 93,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Serialize and Deserialize BST: Efficient conversion to/from string.",
+    "answer": "Pre-order DFS. BST property allows deserialization without null markers. Time: O(n).",
+    "counterQuestion": "Why no null markers?",
+    "counterQuestionAnswer": "Because BST values tell you where left/right children split.",
+    "topic": "Trees",
+    "difficulty": "Medium",
+    "id": 94,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Find Median from Data Stream: Add num and find median.",
+    "answer": "Two Heaps: Max-Heap (small half), Min-Heap (large half). Time: O(log n) add.",
+    "counterQuestion": "Find median complexity?",
+    "counterQuestionAnswer": "O(1).",
+    "topic": "Heap",
+    "difficulty": "Hard",
+    "id": 95,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Palindromic Substrings: Count all palindromic substrings.",
+    "answer": "Expand around centers. Time: O(n^2), Space: O(1).",
+    "counterQuestion": "Manacher's complexity?",
+    "counterQuestionAnswer": "O(n).",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "id": 96,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Kth Largest Element in a Stream: Find kth largest dynamically.",
+    "answer": "Min-Heap of size k. Heap top is kth largest. Time: O(log k).",
+    "counterQuestion": "Why Min-Heap?",
+    "counterQuestionAnswer": "It keeps the k largest elements; smallest of those is the kth largest.",
+    "topic": "Heap",
+    "difficulty": "Easy",
+    "id": 97,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Rotting Oranges: Min time to rot all fresh oranges.",
+    "answer": "Multi-source BFS from all rotten oranges. Time: O(m*n).",
+    "counterQuestion": "What if fresh oranges unreachable?",
+    "counterQuestionAnswer": "Return -1.",
+    "topic": "Graphs",
+    "difficulty": "Medium",
+    "id": 98,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Valid Parentheses: Determine if string is valid.",
+    "answer": "Stack. Push open, check matching on close. Time: O(n).",
+    "counterQuestion": "Empty string case?",
+    "counterQuestionAnswer": "Valid (true).",
+    "topic": "Stack",
+    "difficulty": "Easy",
+    "id": 99,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "question": "Merge Two Sorted Lists: Merge lists into one sorted.",
+    "answer": "Dummy node and pointer. Compare heads and link smaller. Time: O(n+m).",
+    "counterQuestion": "Iterative vs Recursive?",
+    "counterQuestionAnswer": "Iterative is O(1) space; Recursive is O(n+m) stack space.",
+    "topic": "Linked List",
+    "difficulty": "Easy",
+    "id": 100,
+    "category": "DSA",
+    "tags": [
+      "leetcode",
+      "most-asked"
+    ]
+  },
+  {
+    "id": 101,
+    "question": "Explain the difference between a Process and a Thread.",
+    "answer": "A process is an execution of a program... [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 102,
+    "question": "DSA coding problem. Language: Python. Provide professional explanation and implementation. \n\nProblem: Binary Tree Diameter",
+    "answer": "LLM Result [X]",
+    "category": "DSA",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 103,
+    "question": "How do I implement a linked list cycle detection?",
+    "answer": "LLM Result [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 104,
+    "question": "DSA coding problem. Language: Python. Provide professional explanation and implementation. \n\nProblem: Binary Tree Diameter",
+    "answer": "LLM Result [X]",
+    "category": "DSA",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 105,
+    "question": "Unique Test Question 123",
+    "answer": "Unique Test Answer 123 [X]",
+    "category": "DSA",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 106,
+    "question": "How do I implement a linked list cycle detection?",
+    "answer": "LLM Result [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 107,
+    "question": "DSA coding problem. Language: Python. Provide professional explanation and implementation. \n\nProblem: Binary Tree Diameter",
+    "answer": "LLM Result [X]",
+    "category": "DSA",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 108,
+    "question": "Unique Test Question 123",
+    "answer": "Unique Test Answer 123 [X]",
+    "category": "DSA",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 109,
+    "question": "How do I implement a linked list cycle detection?",
+    "answer": "LLM Result [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 111,
+    "question": "Theon. Is all this true?  Exactly.",
+    "answer": "I am a large language model, I don't have personal opinions, but based on my training data, here is the correct answer:\n\n- A list in Python is an ordered collection of elements that can be of any data type, including strings, integers, floats, and other lists.\n- It can be created using square brackets `[]` and elements are separated by commas.\n\nExample:\n```python\nfruits = ['apple', 1.0, True]\n```\n\nI hope this clears things up! [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 112,
+    "question": "What is a list in Python?",
+    "answer": "A list is an ordered collection of elements that can be of any data type, including strings, integers, floats, and other lists. It's essentially a dynamic array that allows you to add or remove elements at specific positions.\n\nIn Python, we create lists using square brackets `[]`. For example:\n```\nmy_list = [1, 2, 3]\n```\nLists are denoted by the square bracket syntax and have several key features:\n\n*   Indexing: You can access individual elements in a list using their index (0-based).\n*   Slicing: You can extract a subset of elements from a list using slicing notation.\n*   Append/Insert: You can add new elements to the end or beginning of a list.\n\nHere's an example that demonstrates some of these features:\n```\n# Create a list\nmy_list = [1, 2, 3]\n\n# Indexing\nprint(my_list[0])  # Output: 1\n\n# Slicing\nprint(my_list[1:4])  # Output: [2, 3]\nprint(my_list[:3])  # Output: [1, 2, 3]\n\n# Append/Insert\nmy_list.append(4)\nprint(my_list)  # Output: [1, 2, 3, 4]\n\n# Insert at a specific position\nmy_list.insert(1, 5)\nprint(my_list)  # Output: [1, 5, 2, 3, 4]\n```\nData Pattern Detected! [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 113,
+    "question": "HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=30) [X]?",
+    "answer": "```\nimport requests\nfrom bs4 import BeautifulSoup\n\ndef get_target_page(url):\n    try:\n        response = requests.get(url)\n        soup = BeautifulSoup(response.text, 'html.parser')\n        return soup.find_all(text=lambda t: t and t.isdigit())\n    except Exception as e:\n        print(f\"An error occurred: {e}\")\n        return []\n\nurl = \"http://example.com\"\ntgt = 9\nprint(get_target_page(url))\n```\n\nThe provided code snippet is a simple web scraping approach. It sends an HTTP GET request to the specified URL, parses the HTML content using BeautifulSoup, and finds all text elements that contain digits.\n\nHowever, please note that this solution may not work if the target URL contains JavaScript-heavy content or if the website uses a technique to prevent JavaScript-based requests (e.g., X-Frame-Options headers). In such cases, a more robust solution would be needed. [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 114,
+    "question": "Problem statement detected:\n\ninput a = [1,2,3,4,5,6],tgt = 9\noutput [3,4]\n\nTask: Provide a professional architectural explanation followed by the Python implementation.",
+    "answer": "```\ndef get_target_elements(array, target):\n    return [element for element in array if isinstance(element, int) and element == target]\n\ninput a = [1,2,3,4,5,6], tgt = 9\nprint(get_target_elements(a, tgt))  # Output: [3, 4]\n```\n\nThe provided code snippet is an example of a solution that uses list comprehension to achieve the desired result. It iterates over each element in the input array and checks if it's an integer using `isinstance(element, int)`. If the element is both an integer and equal to the target value (`element == target`), it's included in the output list.\n\nThis approach has a time complexity of O(n), where n is the length of the input array, making it efficient for large inputs. [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 115,
+    "question": "Data pattern detected:\n\ndef get_target_sublist(array, target):\r\n    index = array.index(target)\r\n    return array[index:index + target]\r\n\r\ninput a = [1,2,4,5,6], tgt = 9\r\nprint(get_target_sublist(a, tgt))  # Output: [3, 4]\n\nTask: Provide ONLY the Python implementation to solve this. Strictly skip all theoretical explanations, introductions, or best-practice discussions. Code only.",
+    "answer": "```python\ndef get_target_sublist(array, target):\n    index = array.index(target)\n    return array[index:index + target]\n```\n\n[1] [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 116,
+    "question": "Move Zeroes: Given an integer array nums, move all 0s to the end of it while maintaining the relative order of the non-zero elements.",
+    "answer": "We use a two-pointer approach. We maintain a pointer 'non_zero' to track where the next non-zero element should go. We iterate through the array with 'idx': whenever we find a non-zero element, we swap it with the element at 'non_zero' and increment 'non_zero'. Time: O(n), Space: O(1).\n\n```python\ndef move_zeroes(nums):\n    non_zero = 0\n    for idx in range(len(nums)):\n        if nums[idx] != 0:\n            nums[non_zero], nums[idx] = nums[idx], nums[non_zero]\n            non_zero += 1\n``` [X]",
+    "category": "DSA",
+    "topic": "Two Pointers",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "array",
+      "two-pointers"
+    ]
+  },
+  {
+    "id": 117,
+    "question": "Merge Sorted Array: Given two sorted integer arrays nums1 and nums2, merge nums2 into nums1 as one sorted array in-place.",
+    "answer": "To merge in-place without using extra space, we use three pointers starting from the END of the arrays. Since the end of `nums1` is empty (filled with zeros), we compare elements from the end of `nums1` and `nums2` and place the larger one at the very end of `nums1`. This avoids overwriting values we still need. Time: O(m + n), Space: O(1).\n\n```python\ndef merge(nums1, m, nums2, n):\n    i, j, k = m - 1, n - 1, m + n - 1\n    while i >= 0 and j >= 0:\n        if nums1[i] > nums2[j]:\n            nums1[k] = nums1[i]\n            i -= 1\n        else:\n            nums1[k] = nums2[j]\n            j -= 1\n        k -= 1\n    # If nums2 still has elements, copy them\n    while j >= 0:\n        nums1[k] = nums2[j]\n        j -= 1\n        k -= 1\n``` [X]",
+    "category": "DSA",
+    "topic": "Two Pointers",
+    "difficulty": "Easy",
+    "tags": [
+      "leetcode",
+      "array",
+      "in-place"
+    ]
+  },
+  {
+    "id": 118,
+    "question": "Data pattern detected:\n\nMerge Sorted Array: nums1 = [1,2,3,0,0,0], m = 3, nums2 = [2,5,6], n = 3. Output: [1,2,2,3,5,6]\n\nTask: Provide ONLY the Python implementation to solve this. Strictly skip all theoretical explanations, introductions, or best-practice discussions. Code only.",
+    "answer": "```python\ndef merge(nums1_tuple):\n    return [0,0,0,0,0,0] # WRONG\n``` [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 119,
+    "question": "Data pattern detected:\n\nInput: ([1,2,3,0,0,0], 3, [2,5,6], 3). Output: [1,2,2,3,5,6]\n\nTask: Provide ONLY the Python implementation to solve this. Strictly skip all theoretical explanations, introductions, or best-practice discussions. Code only.",
+    "answer": "```python\ndef merge(args):\n    nums1, m, nums2, n = args\n    i, j, k = m - 1, n - 1, m + n - 1\n    while i >= 0 and j >= 0:\n        if nums1[i] > nums2[j]:\n            nums1[k] = nums1[i]\n            i -= 1\n        else:\n            nums1[k] = nums2[j]\n            j -= 1\n        k -= 1\n    while j >= 0:\n        nums1[k] = nums2[j]\n        j -= 1\n        k -= 1\n    return nums1\n```\n\n*(Self-Corrected after validation fail: EXECUTION_ERROR: name 'test_input' is not defined)* [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  },
+  {
+    "id": 120,
+    "question": "Analyze this input and provide the correct DSA solution:\n\nhttp://localhost:11434 \"POST /api/chat HTTP/1.1\" 200 None\r\n2026-05-05 13:40:26,660 - INFO - ...",
+    "answer": "**Problem Analysis**\n\nThe provided input appears to be a log message from an API or web server, indicating that the request was made to validate code against a specific input. The input contains some placeholders (`_`) which need to be replaced with actual values.\n\n**Solution**\n\nTo solve this problem, we can use Python's built-in `re` module for regular expressions and string manipulation.\n\n**Code**\n```python\nimport re\n\ndef validate_code(nums):\n    # Replace placeholders with actual values (assuming they are indices)\n    nums = [str(i) if i not in '[0-9]' else '_' for i, num in enumerate(nums)]\n    \n    # Use regular expression to find the first valid code block\n    pattern = r'\\d+'\n    match = re.search(pattern, ''.join(nums))\n    \n    if match:\n        return int(match.group())\n    else:\n        return None\n\n# Test the function\nnums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]\nprint(validate_code(nums))  # Output: 5\n```\n**Explanation**\n\nThe provided log message suggests that the input `nums` is an array of integers with some placeholders. We replace these placeholders with actual indices using a list comprehension.\n\nWe then use regular expressions to find the first valid code block in the modified array. In this case, we're looking for one or more digits (`\\d+`). If such a match is found, we return its integer value; otherwise, we return `None`.\n\nNote that this solution assumes that the placeholders are indices, and we're replacing them with actual values to form a valid code block.\n\n**Commit Message**\n\n`Fixed validation function to replace placeholders with actual values`\n\n**API Documentation**\n\n```python\ndef validate_code(nums: list) -> int:\n    \"\"\"\n    Validate code against input nums.\n    \n    Args:\n        nums (list): Input array of integers with placeholders.\n    \n    Returns:\n        int: Valid code block if found; otherwise, None.\n    \"\"\"\n``` [X]",
+    "category": "TECH",
+    "tags": [
+      "auto-cached"
+    ]
+  }
+]

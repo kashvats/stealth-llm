@@ -1,0 +1,109 @@
+{
+  "patterns": [
+    {
+      "id": "TWO_POINTERS_DUPLICATES",
+      "name": "Remove Duplicates from Sorted Array",
+      "description": "In-place duplicate removal from a sorted array.",
+      "code": "def remove_duplicates(nums):\n    if not nums: return 0\n    k = 1\n    for i in range(1, len(nums)):\n        if nums[i] != nums[i-1]:\n            nums[k] = nums[i]\n            k += 1\n    return k",
+      "complexity": "O(n) Time, O(1) Space"
+    },
+    {
+      "id": "SLIDING_WINDOW_MAX_SUBARRAY",
+      "name": "Maximum Subarray (Kadane's)",
+      "description": "Find the contiguous subarray with the largest sum.",
+      "code": "def max_subarray(nums):\n    max_so_far = nums[0]\n    current_max = nums[0]\n    for i in range(1, len(nums)):\n        current_max = max(nums[i], current_max + nums[i])\n        max_so_far = max(max_so_far, current_max)\n    return max_so_far",
+      "complexity": "O(n) Time, O(1) Space"
+    },
+    {
+      "id": "TWO_POINTERS_PALINDROME",
+      "name": "Valid Palindrome",
+      "description": "Check if a string is a palindrome, ignoring non-alphanumeric characters.",
+      "code": "def is_palindrome(s):\n    l, r = 0, len(s) - 1\n    while l < r:\n        while l < r and not s[l].isalnum(): l += 1\n        while l < r and not s[r].isalnum(): r -= 1\n        if s[l].lower() != s[r].lower(): return False\n        l += 1\n        r -= 1\n    return True",
+      "complexity": "O(n) Time, O(1) Space"
+    },
+    {
+      "id": "BINARY_SEARCH_BASIC",
+      "name": "Binary Search",
+      "description": "Standard binary search in a sorted array.",
+      "code": "def binary_search(nums, target):\n    l, r = 0, len(nums) - 1\n    while l <= r:\n        m = (l + r) // 2\n        if nums[m] == target: return m\n        elif nums[m] < target: l = m + 1\n        else: r = m - 1\n    return -1",
+      "complexity": "O(log n) Time, O(1) Space"
+    },
+    {
+      "id": "LINKED_LIST_REVERSE",
+      "name": "Reverse Linked List",
+      "description": "Iteratively reverse a singly linked list.",
+      "code": "def reverse_list(head):\n    prev = None\n    curr = head\n    while curr:\n        next_node = curr.next\n        curr.next = prev\n        prev = curr\n        curr = next_node\n    return prev",
+      "complexity": "O(n) Time, O(1) Space"
+    },
+    {
+      "id": "DFS_ISLANDS",
+      "name": "Number of Islands (DFS)",
+      "description": "Count islands in a 2D grid using Depth First Search.",
+      "code": "def num_islands(grid):\n    if not grid: return 0\n    count = 0\n    def dfs(r, c):\n        if r < 0 or c < 0 or r >= len(grid) or c >= len(grid[0]) or grid[r][c] == '0':\n            return\n        grid[r][c] = '0'\n        dfs(r+1, c); dfs(r-1, c); dfs(r, c+1); dfs(r, c-1)\n    for r in range(len(grid)):\n        for c in range(len(grid[0])):\n            if grid[r][c] == '1':\n                count += 1\n                dfs(r, c)\n    return count",
+      "complexity": "O(M*N) Time, O(M*N) Space"
+    },
+    {
+      "id": "TWO_HEAPS_MEDIAN",
+      "name": "Find Median from Data Stream",
+      "description": "Use two heaps (min and max) to maintain the median.",
+      "code": "import heapq\nclass MedianFinder:\n    def __init__(self):\n        self.small, self.large = [], []\n    def addNum(self, num):\n        heapq.heappush(self.small, -num)\n        if self.small and self.large and (-self.small[0] > self.large[0]):\n            val = -heapq.heappop(self.small)\n            heapq.heappush(self.large, val)\n        if len(self.small) > len(self.large) + 1:\n            val = -heapq.heappop(self.small)\n            heapq.heappush(self.large, val)\n        if len(self.large) > len(self.small) + 1:\n            val = heapq.heappop(self.large)\n            heapq.heappush(self.small, -val)\n    def findMedian(self):\n        if len(self.small) > len(self.large): return -self.small[0]\n        if len(self.large) > len(self.small): return self.large[0]\n        return (-self.small[0] + self.large[0]) / 2",
+      "complexity": "Add: O(log n), Find: O(1)"
+    },
+    {
+      "id": "LRU_CACHE",
+      "name": "LRU Cache (OrderedDict)",
+      "description": "Implementation of Least Recently Used cache using Python's OrderedDict.",
+      "code": "from collections import OrderedDict\nclass LRUCache:\n    def __init__(self, capacity: int):\n        self.cache = OrderedDict()\n        self.capacity = capacity\n    def get(self, key: int) -> int:\n        if key not in self.cache:\n            return -1\n        self.cache.move_to_end(key)\n        return self.cache[key]\n    def put(self, key: int, value: int) -> None:\n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.capacity:\n            self.cache.popitem(last=False)",
+      "complexity": "Get/Put: O(1)"
+    },
+    {
+      "id": "MERGE_INTERVALS",
+      "name": "Merge Intervals",
+      "description": "Merge overlapping intervals in a sorted list.",
+      "code": "def merge_intervals(intervals):\n    intervals.sort(key=lambda x: x[0])\n    merged = []\n    for interval in intervals:\n        if not merged or merged[-1][1] < interval[0]:\n            merged.append(interval)\n        else:\n            merged[-1][1] = max(merged[-1][1], interval[1])\n    return merged",
+      "complexity": "O(n log n) Time, O(n) Space"
+    },
+    {
+      "id": "TOPOLOGICAL_SORT",
+      "name": "Course Schedule (Topological Sort)",
+      "description": "Detect cycles or find ordering in a directed graph using Kahn's algorithm.",
+      "code": "from collections import deque\ndef canFinish(numCourses, prerequisites):\n    adj = [[] for _ in range(numCourses)]\n    indegree = [0] * numCourses\n    for dest, src in prerequisites:\n        adj[src].append(dest)\n        indegree[dest] += 1\n    q = deque([i for i in range(numCourses) if indegree[i] == 0])\n    count = 0\n    while q:\n        curr = q.popleft()\n        count += 1\n        for neighbor in adj[curr]:\n            indegree[neighbor] -= 1\n            if indegree[neighbor] == 0:\n                q.append(neighbor)\n    return count == numCourses",
+      "complexity": "O(V + E) Time, O(V + E) Space"
+    },
+    {
+      "id": "TRIE_BASIC",
+      "name": "Implement Trie (Prefix Tree)",
+      "description": "Standard Trie with insert, search, and startsWith operations.",
+      "code": "class TrieNode:\n    def __init__(self): self.children = {}; self.is_end = False\nclass Trie:\n    def __init__(self): self.root = TrieNode()\n    def insert(self, word):\n        node = self.root\n        for char in word:\n            if char not in node.children: node.children[char] = TrieNode()\n            node = node.children[char]\n        node.is_end = True\n    def search(self, word):\n        node = self.root\n        for char in word:\n            if char not in node.children: return False\n            node = node.children[char]\n        return node.is_end\n    def startsWith(self, prefix):\n        node = self.root\n        for char in prefix:\n            if char not in node.children: return False\n            node = node.children[char]\n        return True",
+      "complexity": "O(L) Time per operation"
+    },
+    {
+      "id": "TREE_INORDER",
+      "name": "Binary Tree Inorder Traversal",
+      "description": "Standard recursive inorder traversal (Left, Root, Right).",
+      "code": "def inorderTraversal(root):\n    res = []\n    def helper(node):\n        if not node: return\n        helper(node.left)\n        res.append(node.val)\n        helper(node.right)\n    helper(root)\n    return res",
+      "complexity": "O(n) Time, O(n) Space"
+    },
+    {
+      "id": "TREE_LEVEL_ORDER",
+      "name": "Binary Tree Level Order Traversal",
+      "description": "Breadth First Search on a tree to get levels.",
+      "code": "from collections import deque\ndef levelOrder(root):\n    if not root: return []\n    res, q = [], deque([root])\n    while q:\n        level = []\n        for _ in range(len(q)):\n            node = q.popleft()\n            level.append(node.val)\n            if node.left: q.append(node.left)\n            if node.right: q.append(node.right)\n        res.append(level)\n    return res",
+      "complexity": "O(n) Time, O(n) Space"
+    },
+    {
+      "id": "DP_KNAPSACK",
+      "name": "0/1 Knapsack (Dynamic Programming)",
+      "description": "Classical DP problem to maximize value within weight limit.",
+      "code": "def knapsack(weights, values, capacity):\n    n = len(weights)\n    dp = [[0] * (capacity + 1) for _ in range(n + 1)]\n    for i in range(1, n + 1):\n        for w in range(1, capacity + 1):\n            if weights[i-1] <= w:\n                dp[i][w] = max(values[i-1] + dp[i-1][w-weights[i-1]], dp[i-1][w])\n            else:\n                dp[i][w] = dp[i-1][w]\n    return dp[n][capacity]",
+      "complexity": "O(n*W) Time, O(n*W) Space"
+    },
+    {
+      "id": "DP_LCS",
+      "name": "Longest Common Subsequence",
+      "description": "Find the length of the longest common subsequence of two strings.",
+      "code": "def lcs(text1, text2):\n    m, n = len(text1), len(text2)\n    dp = [[0] * (n + 1) for _ in range(m + 1)]\n    for i in range(1, m + 1):\n        for j in range(1, n + 1):\n            if text1[i-1] == text2[j-1]:\n                dp[i][j] = 1 + dp[i-1][j-1]\n            else:\n                dp[i][j] = max(dp[i-1][j], dp[i][j-1])\n    return dp[m][n]",
+      "complexity": "O(m*n) Time, O(m*n) Space"
+    }
+  ]
+}

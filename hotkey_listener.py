@@ -1,5 +1,6 @@
 from pynput import keyboard
 import logging
+import platform
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +58,16 @@ class GlobalHotkeyListener:
         # For double ESC, we might need a regular listener to catch it
         self.esc_listener = keyboard.Listener(on_press=self._on_press)
         
-        self.listener.start()
-        self.esc_listener.start()
-        logger.info("Global Hotkey Listener started.")
+        try:
+            self.listener.start()
+            self.esc_listener.start()
+            logger.info("Global Hotkey Listener started successfully.")
+        except Exception as e:
+            logger.error(f"Failed to start Global Hotkey Listener: {e}")
+            if platform.system() == "Darwin":
+                logger.error("MACOS PERMISSION REQUIRED: Please grant 'Accessibility' permissions to your terminal/Python in System Settings -> Privacy & Security.")
+            elif platform.system() == "Linux":
+                logger.error("LINUX HOTKEY LIMITATION: If you are on Wayland, global hotkeys are restricted. Please switch to an X11 (Xorg) session or run as root (not recommended).")
 
     def _on_press(self, key):
         if key == keyboard.Key.esc:

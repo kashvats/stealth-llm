@@ -1,7 +1,8 @@
 pyperclip
 requests
 faster-whisper
-pyaudiowpatch
+pyaudiowpatch; sys_platform == "win32"
+pyaudio; sys_platform != "win32"
 numpy
 python-dotenv
 pytest

@@ -1,6 +1,5 @@
 {
     "language": "Python",
-    "color_theme": "Blue",
+    "color_theme": "Green",
     "llm_mode": "local"
-    // "llm_mode": "cloud"
 }

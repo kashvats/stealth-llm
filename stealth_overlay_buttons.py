@@ -35,7 +35,10 @@ class StealthOverlayButtons:
         self._set_top_center_geometry(800, 250)
         self.root.overrideredirect(True)
         self.root.attributes("-topmost", True)
-        self.root.attributes("-alpha", 1.0) # Solid contrast
+        try:
+            self.root.attributes("-alpha", 1.0) # Solid contrast
+        except:
+            logger.warning("Transparency (alpha) not supported on this system.")
         self.root.config(bg='#121212') 
         
         # --- Main Frame ---
