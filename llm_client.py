@@ -383,11 +383,126 @@ class LlamaCppClient(LLMClient):
                 logger.error(f"LlamaCpp Stream Failed: {e}")
                 yield f"Error (LlamaCpp): {str(e)}"
 
+class ColibriClient(LLMClient):
+    """
+    Colibri local engine client.
+    Connects to 'coli serve' (streaming MoE experts directly from NVMe/SSD disk
+    in pure C, zero deps, so heavy models run on consumer hardware without eating all RAM).
+    Exposes OpenAI-compatible endpoints: /v1/chat/completions, /v1/models.
+    """
+    def __init__(self, base_url: Optional[str] = None, model: Optional[str] = None, api_key: Optional[str] = None):
+        self.model = model or os.getenv("COLIBRI_MODEL", "colibri")
+        self.api_key = api_key or os.getenv("COLIBRI_API_KEY")
+
+        raw_base = base_url or os.getenv("COLIBRI_BASE_URL", "http://127.0.0.1:8000")
+        base = raw_base.rstrip("/")
+        if base.endswith("/v1"):
+            base = base[:-3]
+        self.base_url = base
+
+    def _get_headers(self) -> dict:
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        return headers
+
+    def verify(self) -> bool:
+        """Checks if Colibri server is reachable via /v1/models or root."""
+        headers = self._get_headers()
+        try:
+            # Check /v1/models
+            resp = requests.get(f"{self.base_url}/v1/models", headers=headers, timeout=5)
+            if resp.status_code == 200:
+                return True
+            # Fallback to root
+            resp = requests.get(f"{self.base_url}/", headers=headers, timeout=5)
+            return resp.status_code == 200
+        except Exception as e:
+            logger.error(f"Colibri verification failed: {e}")
+            return False
+
+    def ask(self, prompt: str, system_prompt: Optional[str] = None, history: Optional[list] = None) -> str:
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        if history:
+            messages.extend(history)
+        messages.append({"role": "user", "content": prompt})
+
+        url = f"{self.base_url}/v1/chat/completions"
+        headers = self._get_headers()
+        data = {
+            "model": self.model,
+            "messages": messages,
+            "stream": False,
+        }
+        try:
+            response = requests.post(url, headers=headers, json=data, timeout=120)
+            if response.status_code != 200:
+                error_msg = response.text
+                try:
+                    error_json = response.json()
+                    if "error" in error_json:
+                        err_obj = error_json["error"]
+                        error_msg = err_obj.get("message", str(err_obj)) if isinstance(err_obj, dict) else str(err_obj)
+                except Exception:
+                    pass
+                logger.error(f"Colibri API Error ({response.status_code}): {error_msg}")
+                return f"Error (Colibri): {error_msg}"
+            result = response.json()
+            return result["choices"][0]["message"]["content"]
+        except Exception as e:
+            logger.error(f"Colibri Request Failed: {e}")
+            return f"Error (Colibri): {str(e)}"
+
+    def ask_stream(self, prompt: str, system_prompt: Optional[str] = None, history: Optional[list] = None) -> Iterator[str]:
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        if history:
+            messages.extend(history)
+        messages.append({"role": "user", "content": prompt})
+
+        url = f"{self.base_url}/v1/chat/completions"
+        headers = self._get_headers()
+        data = {
+            "model": self.model,
+            "messages": messages,
+            "stream": True,
+        }
+        try:
+            with requests.post(url, headers=headers, json=data, stream=True, timeout=120) as resp:
+                if resp.status_code != 200:
+                    yield f"Error (Colibri): {resp.status_code}"
+                    return
+                for line in resp.iter_lines():
+                    if not line:
+                        continue
+                    line_str = line.decode("utf-8") if isinstance(line, bytes) else line
+                    line_str = line_str.strip()
+                    if line_str.startswith("data: "):
+                        payload = line_str[6:].strip()
+                        if payload == "[DONE]":
+                            break
+                        try:
+                            chunk = json.loads(payload)
+                            choices = chunk.get("choices", [])
+                            if choices:
+                                delta = choices[0].get("delta", {})
+                                content = delta.get("content", "")
+                                if content:
+                                    yield content
+                        except json.JSONDecodeError:
+                            continue
+        except Exception as e:
+            logger.error(f"Colibri Stream Failed: {e}")
+            yield f"Error (Colibri): {str(e)}"
+
 def get_client(api_key: Optional[str] = None, provider: Optional[str] = None, local_model: str = "llama3.2") -> LLMClient:
     """
     Factory to return the best available LLM Client.
     Priority:
-    1. Explicit 'provider' argument (openai/ollama/llamacpp)
+    1. Explicit 'provider' argument (openai/ollama/llamacpp/colibri)
     2. Environment 'LLM_PROVIDER'
     3. Presence of 'OPENAI_API_KEY' -> OpenAI
     4. Default -> Ollama (Offline)
@@ -400,6 +515,8 @@ def get_client(api_key: Optional[str] = None, provider: Optional[str] = None, lo
     if not provider:
         if api_key or os.getenv("OPENAI_API_KEY"):
             provider = "openai"
+        elif os.getenv("COLIBRI_BASE_URL"):
+            provider = "colibri"
         elif os.getenv("LLAMACPP_BASE_URL") or os.getenv("LLAMACPP_MODEL_PATH"):
             provider = "llamacpp"
         else:
@@ -421,6 +538,15 @@ def get_client(api_key: Optional[str] = None, provider: Optional[str] = None, lo
             else:
                 logger.error("OpenAI verification failed. Falling back to Ollama/Mock.")
                 # Fallthrough to next priority
+
+    if provider in ("colibri", "coli"):
+        client = ColibriClient()
+        if client.verify():
+            logger.info("Colibri Connection Verified.")
+            return client
+        else:
+            logger.error("Colibri verification failed. Falling back to Mock.")
+            return MockLLMClient()
 
     if provider in ("llamacpp", "llama.cpp", "llama_cpp"):
         client = LlamaCppClient()

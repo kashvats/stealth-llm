@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from llm_client import OpenAIClient, OllamaClient, MockLLMClient, LlamaCppClient, get_client
+from llm_client import OpenAIClient, OllamaClient, MockLLMClient, LlamaCppClient, ColibriClient, get_client
 
 
 class TestOpenAIClient:
@@ -342,6 +342,56 @@ class TestGetClientFactory:
 
         assert isinstance(client, MockLLMClient)
 
+    @patch.dict("os.environ", {})
+    @patch("llm_client.ColibriClient.verify")
+    def test_get_client_colibri_explicit(self, mock_verify):
+        """Test explicit colibri provider selection."""
+        mock_verify.return_value = True
+
+        client = get_client(provider="colibri")
+
+        assert isinstance(client, ColibriClient)
+
+    @patch.dict("os.environ", {})
+    @patch("llm_client.ColibriClient.verify")
+    def test_get_client_coli_alias(self, mock_verify):
+        """Test coli alias in provider argument."""
+        mock_verify.return_value = True
+
+        client = get_client(provider="coli")
+
+        assert isinstance(client, ColibriClient)
+
+    @patch.dict("os.environ", {"LLM_PROVIDER": "colibri"})
+    @patch("llm_client.ColibriClient.verify")
+    def test_get_client_auto_detect_colibri_env(self, mock_verify):
+        """Test auto-detection via LLM_PROVIDER=colibri."""
+        mock_verify.return_value = True
+
+        client = get_client()
+
+        assert isinstance(client, ColibriClient)
+
+    @patch.dict("os.environ", {"COLIBRI_BASE_URL": "http://127.0.0.1:8000"})
+    @patch("llm_client.ColibriClient.verify")
+    def test_get_client_auto_detect_colibri_base_url(self, mock_verify):
+        """Test auto-detection when COLIBRI_BASE_URL is set in environment."""
+        mock_verify.return_value = True
+
+        client = get_client()
+
+        assert isinstance(client, ColibriClient)
+
+    @patch.dict("os.environ", {})
+    @patch("llm_client.ColibriClient.verify")
+    def test_get_client_colibri_failed_fallback_mock(self, mock_verify):
+        """Test that failed colibri provider falls back to MockLLMClient."""
+        mock_verify.return_value = False
+
+        client = get_client(provider="colibri")
+
+        assert isinstance(client, MockLLMClient)
+
 
 class TestClientErrorHandling:
     """Tests for error handling across all clients."""
@@ -390,6 +440,159 @@ class TestClientErrorHandling:
         result = client.ask("Test")
 
         assert "Error" in result or "KeyError" in result
+
+    @patch("llm_client.requests.post")
+    def test_colibri_malformed_response(self, mock_post):
+        """Test handling of unexpected Colibri response format."""
+        client = ColibriClient()
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"unexpected": "format"}
+        mock_post.return_value = mock_response
+
+        result = client.ask("Test")
+
+        assert "Error" in result or "KeyError" in result
+
+
+class TestColibriClient:
+    """Tests for Colibri client (coli serve)."""
+
+    @pytest.fixture
+    def client(self):
+        return ColibriClient(base_url="http://127.0.0.1:8000")
+
+    @patch("llm_client.requests.post")
+    def test_ask_success(self, mock_post, client):
+        """Test successful Colibri call via /v1/chat/completions."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": "colibri response"}}]
+        }
+        mock_post.return_value = mock_response
+
+        result = client.ask("Hello Colibri")
+
+        assert result == "colibri response"
+        mock_post.assert_called_once()
+        assert mock_post.call_args[0][0] == "http://127.0.0.1:8000/v1/chat/completions"
+
+    @patch("llm_client.requests.post")
+    def test_ask_with_system_prompt_and_history(self, mock_post, client):
+        """Test Colibri call with system prompt and history."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": "Answer"}}]
+        }
+        mock_post.return_value = mock_response
+
+        history = [{"role": "user", "content": "Hi"}, {"role": "assistant", "content": "Hello"}]
+        result = client.ask("Follow-up", system_prompt="Expert", history=history)
+
+        assert result == "Answer"
+        messages = mock_post.call_args[1]["json"]["messages"]
+        assert messages[0] == {"role": "system", "content": "Expert"}
+        assert messages[1] == {"role": "user", "content": "Hi"}
+        assert messages[2] == {"role": "assistant", "content": "Hello"}
+        assert messages[3] == {"role": "user", "content": "Follow-up"}
+
+    @patch("llm_client.requests.post")
+    def test_ask_api_error(self, mock_post, client):
+        """Test error handling when Colibri server returns non-200."""
+        mock_response = Mock()
+        mock_response.status_code = 500
+        mock_response.json.return_value = {"error": {"message": "Out of VRAM/experts"}}
+        mock_response.text = "Server error"
+        mock_post.return_value = mock_response
+
+        result = client.ask("Test")
+
+        assert "Error" in result
+
+    @patch("llm_client.requests.post")
+    def test_ask_network_error(self, mock_post, client):
+        """Test network connection error handling."""
+        mock_post.side_effect = Exception("Connection refused")
+
+        result = client.ask("Test")
+
+        assert "Error" in result
+        assert "Connection" in result
+
+    @patch("llm_client.requests.post")
+    def test_ask_stream_success(self, mock_post, client):
+        """Test streaming tokens from Colibri server."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        lines = [
+            b'data: {"choices":[{"delta":{"content":"Fast"}}]}',
+            b'data: {"choices":[{"delta":{"content":" streaming"}}]}',
+            b'data: [DONE]'
+        ]
+        mock_response.iter_lines.return_value = lines
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = False
+        mock_post.return_value = mock_response
+
+        tokens = list(client.ask_stream("Hello"))
+
+        assert tokens == ["Fast", " streaming"]
+
+    @patch("llm_client.requests.post")
+    def test_ask_stream_error(self, mock_post, client):
+        """Test streaming error when status code != 200."""
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = False
+        mock_post.return_value = mock_response
+
+        tokens = list(client.ask_stream("Hello"))
+
+        assert len(tokens) == 1
+        assert "Error" in tokens[0]
+
+    @patch("llm_client.requests.get")
+    def test_verify_success(self, mock_get, client):
+        """Test verification passes when /v1/models returns 200."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+
+        assert client.verify() is True
+        mock_get.assert_called_with("http://127.0.0.1:8000/v1/models", headers={"Content-Type": "application/json"}, timeout=5)
+
+    @patch("llm_client.requests.get")
+    def test_verify_failure(self, mock_get, client):
+        """Test verification fails when server is not reachable."""
+        mock_get.side_effect = Exception("Connection refused")
+
+        assert client.verify() is False
+
+    def test_base_url_normalization(self):
+        """Test URL normalization for trailing slashes and /v1."""
+        c1 = ColibriClient(base_url="http://127.0.0.1:8000/")
+        assert c1.base_url == "http://127.0.0.1:8000"
+
+        c2 = ColibriClient(base_url="http://127.0.0.1:8000/v1")
+        assert c2.base_url == "http://127.0.0.1:8000"
+
+    @patch("llm_client.requests.post")
+    def test_api_key_header(self, mock_post):
+        """Test Authorization header with api_key."""
+        client = ColibriClient(base_url="http://127.0.0.1:8000", api_key="secret-coli")
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"choices": [{"message": {"content": "ok"}}]}
+        mock_post.return_value = mock_response
+
+        client.ask("test")
+
+        headers = mock_post.call_args[1]["headers"]
+        assert headers["Authorization"] == "Bearer secret-coli"
 
 
 class TestLlamaCppClientServer:

@@ -14,7 +14,8 @@ import re
 
 from stealth_overlay_buttons import StealthOverlayButtons
 from clipboard_monitor import ClipboardMonitor
-from llm_client import OllamaClient, OpenAIClient, MockLLMClient, LlamaCppClient
+from llm_client import OllamaClient, OpenAIClient, MockLLMClient, LlamaCppClient, ColibriClient
+from resource_governor import ResourceGovernor
 from audio_transcriber import AudioTranscriber
 from lock_manager import LockManager, LockState
 from hotkey_listener import GlobalHotkeyListener
@@ -36,9 +37,16 @@ class StealthPilotApp:
         # Knowledge Base (Local Cache)
         self.kb = KnowledgeBase("dsa.json")
         
+        # Resource Governor (Anti-freeze protection for heavy models)
+        self.resource_governor = ResourceGovernor()
+        self.resource_governor.apply_protection()
+
         # Clients
         local_provider = os.getenv("LLM_PROVIDER", "ollama").lower()
-        if local_provider in ("llamacpp", "llama.cpp", "llama_cpp"):
+        if local_provider in ("colibri", "coli"):
+            self.local_client = ColibriClient()
+            self.local_name = "Colibri"
+        elif local_provider in ("llamacpp", "llama.cpp", "llama_cpp"):
             self.local_client = LlamaCppClient()
             self.local_name = "llama.cpp"
         else:
@@ -351,19 +359,30 @@ class StealthPilotApp:
             except Exception as e:
                 logger.warning(f"Failed to read resume: {e}")
 
+        # Check memory safety before querying heavy local models
+        is_safe, avail_mb = self.resource_governor.check_memory()
+        if not is_safe:
+            logger.warning(f"Low system memory ({avail_mb:.0f} MB free). Inference may be constrained.")
+
         try:
             # Clear text area and stream response tokens to UI as they arrive
             self.ui_queue.put(("stream_token", "\u200b"))  # trigger clear via update_text first
             self.ui_queue.put("▋")  # cursor placeholder (will be replaced by first token)
             chunks = []
             first_token = True
+            batcher = self.resource_governor.create_batcher()
             for token in self.current_client.ask_stream(question, system_prompt=system_prompt, history=self.history):
                 chunks.append(token)
                 if first_token:
                     self.ui_queue.put(token)  # first token: use update_text to clear "Thinking..."
                     first_token = False
                 else:
-                    self.ui_queue.put(("stream_token", token))
+                    batched = batcher.add(token)
+                    if batched:
+                        self.ui_queue.put(("stream_token", batched))
+            tail = batcher.flush()
+            if tail:
+                self.ui_queue.put(("stream_token", tail))
             answer = "".join(chunks)
             
             # Pattern Injection Loop

@@ -50,13 +50,18 @@ Create a `.env` file in the project root:
 
 ```env
 # LLM Configuration
-LLM_PROVIDER=ollama                    # "ollama", "llamacpp", or "openai"
+LLM_PROVIDER=ollama                    # "ollama", "colibri", "llamacpp", or "openai"
 OLLAMA_BASE_URL=http://localhost:11434 # Ollama server URL
 OLLAMA_MODEL=llama3.2                  # Local model name
+COLIBRI_BASE_URL=http://127.0.0.1:8000 # Colibri server URL (coli serve)
 LLAMACPP_BASE_URL=http://localhost:8080# llama.cpp server URL (if using llamacpp)
 LLAMACPP_MODEL_PATH=                   # Optional: path to .gguf for direct in-process execution
 OPENAI_API_KEY=your-api-key-here       # Required only if using OpenAI
 OPENAI_MODEL=gpt-4o-mini               # OpenAI model to use
+
+# Anti-Freeze & Resource Protection
+RESOURCE_GOVERNOR_ENABLED=true         # Automatically deprioritize inference to prevent UI freezing
+RESERVED_CPU_CORES=2                   # Reserve cores for OS desktop rendering and window manager
 
 # Code Validation
 ENABLE_CODE_VALIDATION=false           # Set to true to enable sandbox validation
@@ -89,12 +94,17 @@ A transparent overlay window will appear on your screen.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LLM_PROVIDER` | `ollama` | Choose `ollama` (local), `llamacpp` (local), or `openai` (cloud) |
+| `LLM_PROVIDER` | `ollama` | Choose `ollama` (local), `colibri` (disk-streamed MoE), `llamacpp` (local), or `openai` (cloud) |
+| `COLIBRI_BASE_URL` | `http://127.0.0.1:8000` | Colibri server address (`coli serve`) |
+| `COLIBRI_MODEL` | `colibri` | Model name for Colibri endpoint |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server address |
 | `OLLAMA_MODEL` | `llama3.2` | Model to use with Ollama |
 | `LLAMACPP_BASE_URL` | `http://localhost:8080` | llama.cpp server address (llama-server) |
 | `LLAMACPP_MODEL_PATH` | (none) | Path to local `.gguf` model for direct execution |
 | `LLAMACPP_API_KEY` | (none) | Optional API key for llama.cpp server |
+| `RESOURCE_GOVERNOR_ENABLED` | `true` | Lower process priority to keep screen/mouse smooth |
+| `RESERVED_CPU_CORES` | `2` | CPU cores reserved exclusively for OS and UI |
+| `MIN_FREE_RAM_MB` | `1024` | RAM headroom safeguard before heavy inference |
 | `OPENAI_API_KEY` | (none) | Required for OpenAI mode |
 | `OPENAI_MODEL` | `gpt-4o-mini` | GPT model to use |
 | `ENABLE_CODE_VALIDATION` | `false` | Enable sandbox code execution validation |
