@@ -50,9 +50,11 @@ Create a `.env` file in the project root:
 
 ```env
 # LLM Configuration
-LLM_PROVIDER=ollama                    # "ollama" or "openai"
+LLM_PROVIDER=ollama                    # "ollama", "llamacpp", or "openai"
 OLLAMA_BASE_URL=http://localhost:11434 # Ollama server URL
 OLLAMA_MODEL=llama3.2                  # Local model name
+LLAMACPP_BASE_URL=http://localhost:8080# llama.cpp server URL (if using llamacpp)
+LLAMACPP_MODEL_PATH=                   # Optional: path to .gguf for direct in-process execution
 OPENAI_API_KEY=your-api-key-here       # Required only if using OpenAI
 OPENAI_MODEL=gpt-4o-mini               # OpenAI model to use
 
@@ -87,9 +89,12 @@ A transparent overlay window will appear on your screen.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LLM_PROVIDER` | `ollama` | Choose `ollama` (local) or `openai` (cloud) |
+| `LLM_PROVIDER` | `ollama` | Choose `ollama` (local), `llamacpp` (local), or `openai` (cloud) |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server address |
 | `OLLAMA_MODEL` | `llama3.2` | Model to use with Ollama |
+| `LLAMACPP_BASE_URL` | `http://localhost:8080` | llama.cpp server address (llama-server) |
+| `LLAMACPP_MODEL_PATH` | (none) | Path to local `.gguf` model for direct execution |
+| `LLAMACPP_API_KEY` | (none) | Optional API key for llama.cpp server |
 | `OPENAI_API_KEY` | (none) | Required for OpenAI mode |
 | `OPENAI_MODEL` | `gpt-4o-mini` | GPT model to use |
 | `ENABLE_CODE_VALIDATION` | `false` | Enable sandbox code execution validation |

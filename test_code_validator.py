@@ -43,7 +43,8 @@ def twoSum(nums, target):
         seen[num] = i
     return []
 """
-        success, msg = CodeValidator.validate_logic(code, "[2, 7, 11, 15]", "[0, 1]")
+        # Pass both args as a tuple-style input: "(nums, target)"
+        success, msg = CodeValidator.validate_logic(code, "([2, 7, 11, 15], 9)", "[0, 1]")
         assert success is True
         assert "Passed" in msg
 
@@ -52,7 +53,7 @@ def twoSum(nums, target):
 def twoSum(nums, target):
     return [0, 0]
 """
-        success, msg = CodeValidator.validate_logic(code, "[2, 7, 11, 15]", "[0, 1]")
+        success, msg = CodeValidator.validate_logic(code, "([2, 7, 11, 15], 9)", "[0, 1]")
         assert success is False
         assert "FAILURE" in msg or "Got" in msg
 

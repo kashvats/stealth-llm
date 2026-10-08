@@ -49,10 +49,18 @@ class CodeValidator:
 
     @staticmethod
     def _build_validation_script(code: str, func_name: str, test_input: str, expected_output: str) -> str:
-        """Builds the validation script with input/output comparison."""
+        """Builds the validation script with input/output comparison.
+
+        Args are embedded as repr() literals so they survive f-string escaping
+        and are never re-interpolated inside the generated script.
+        """
+        raw_input = repr(test_input)
+        raw_expected = repr(expected_output)
+        raw_func = func_name  # already a safe identifier (validated by regex above)
+
         return f"""
-import json
 import ast
+import inspect
 
 {code}
 
@@ -68,26 +76,39 @@ def flexible_compare(actual, expected):
     return str(actual).strip() == str(expected).strip()
 
 try:
-    t_input = {json.dumps(test_input)}
-    if t_input.strip().startswith('[') or t_input.strip().startswith('{{'):
-        args = ast.literal_eval(t_input)
-    elif "," in t_input and "=" not in t_input:
-        args = ast.literal_eval(f"({{t_input}})")
+    t_input_str = {raw_input}
+    if t_input_str.strip().startswith('[') or t_input_str.strip().startswith('{{'):
+        args = ast.literal_eval(t_input_str)
+    elif ',' in t_input_str and '=' not in t_input_str:
+        args = ast.literal_eval('(' + t_input_str + ')')
     else:
         try:
-            args = ast.literal_eval(t_input)
-        except:
-            args = t_input
+            args = ast.literal_eval(t_input_str)
+        except Exception:
+            args = t_input_str
 
     try:
-        expected = ast.literal_eval({json.dumps(expected_output)})
-    except:
-        expected = {json.dumps(expected_output)}
+        expected = ast.literal_eval({raw_expected})
+    except Exception:
+        expected = {raw_expected}
 
-    if isinstance(args, tuple):
-        actual = {func_name}(*args)
+    # Introspect function signature to determine how many params it expects
+    try:
+        sig_params = len(inspect.signature({raw_func}).parameters)
+    except Exception:
+        sig_params = -1
+
+    if sig_params == 0:
+        actual = {raw_func}()
+    elif isinstance(args, tuple):
+        actual = {raw_func}(*args)
+    elif isinstance(args, list) and len(args) > 1 and sig_params != 1:
+        try:
+            actual = {raw_func}(*args)
+        except TypeError:
+            actual = {raw_func}(args)
     else:
-        actual = {func_name}(args)
+        actual = {raw_func}(args)
 
     if flexible_compare(actual, expected):
         print("SUCCESS")

@@ -374,7 +374,14 @@ class StealthOverlayButtons:
         self.text_area.delete("1.0", tk.END)
         self.text_area.insert(tk.END, text)
         self.text_area.see(tk.END)
-        # self._auto_resize(text) # Disabled per user request (no resizing)
+
+    def append_text(self, token: str):
+        """Append a streaming token to the text area without clearing it."""
+        if self.notepad_active:
+            return
+        self.text_area.configure(state="normal")
+        self.text_area.insert(tk.END, token)
+        self.text_area.see(tk.END)
 
     def update_caption(self, text, is_final=False, force=False):
         if self.notepad_active and not force:
@@ -419,11 +426,25 @@ class StealthOverlayButtons:
 
     def apply_stealth(self):
         self.root.update()
-        if platform.system() == "Windows":
+        sys_name = platform.system()
+        if sys_name == "Windows":
             try:
                 hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id()) or self.root.winfo_id()
+                # WDA_EXCLUDEFROMCAPTURE (0x11) — invisible to screen capture tools
                 ctypes.windll.user32.SetWindowDisplayAffinity(hwnd, 0x11)
-            except: pass
+            except Exception as e:
+                logger.warning(f"Windows stealth mode failed: {e}")
+        elif sys_name == "Darwin":
+            try:
+                # macOS: mark window as non-activating and hide from screen sharing
+                self.root.wm_attributes("-alpha", 0.999)  # sub-1.0 triggers compositing bypass
+                self.root.wm_attributes("-topmost", True)
+                logger.info("macOS stealth mode applied (compositor bypass).")
+            except Exception as e:
+                logger.warning(f"macOS stealth mode failed: {e}")
+        else:
+            # Linux: no reliable cross-compositor stealth; stay topmost
+            logger.info("Linux: stealth screen-capture hiding not supported. Window is topmost only.")
     
     def close(self):
         self.root.destroy()

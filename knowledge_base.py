@@ -2,7 +2,9 @@ import json
 import os
 import logging
 from difflib import SequenceMatcher
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
+
+from rag_retriever import RAGRetriever, RAGDocument
 
 logger = logging.getLogger(__name__)
 class KnowledgeBase:
@@ -11,8 +13,11 @@ class KnowledgeBase:
         self.algo_path = "algorithms.json"
         self.data: List[Dict] = []
         self.patterns: List[Dict] = []
+        self._title_index: Dict[str, Dict] = {}  # normalized title -> item
+        self._rag = RAGRetriever()
         self.load()
         self.load_patterns()
+        self._build_index()
 
     def load_patterns(self):
         if os.path.exists(self.algo_path):
@@ -68,29 +73,50 @@ class KnowledgeBase:
         except Exception as e:
             logger.error(f"Unexpected error saving knowledge base: {type(e).__name__}: {e}")
 
+    def _build_index(self) -> None:
+        """Build O(1) title index and RAG TF-IDF index after data loads."""
+        self._title_index = {}
+        for item in self.data:
+            q = item.get("question", "").lower().strip()
+            # Index the short title before the first colon (e.g. "two sum")
+            title = q.split(":")[0].strip() if ":" in q else q[:50]
+            self._title_index[title] = item
+        self._rag.index(self.data, self.patterns)
+        logger.info(f"Title index: {len(self._title_index)} entries. RAG index ready.")
+
+    def search(self, query: str, top_k: int = 3) -> Optional[str]:
+        """
+        RAG retrieval: returns a formatted context string for LLM injection,
+        or None if nothing relevant found.
+        """
+        return self._rag.build_context(query, top_k=top_k)
+
     def lookup(self, query: str, threshold: float = 0.6) -> Optional[Dict]:
         """Finds the best match for a query using title-aware structural matching."""
         if not query or len(query) < 5:
             return None
 
         query_clean = query.lower().strip()
-        
-        # 1. Title/Keyword Priority Matching
+
+        # 0. O(1) title index lookup (fastest path)
+        for title, item in self._title_index.items():
+            if title and len(title) >= 4 and title in query_clean:
+                logger.info(f"Local Match Found! (Index hit: {title})")
+                return item
+
+        # 1. Title/Keyword Priority Matching (fallback scan)
         for item in self.data:
             q_text = item.get("question", "").lower()
-            
-            # If the question has a title prefix (e.g., "Two Sum: ...")
+
             if ":" in q_text:
                 title = q_text.split(":")[0].strip()
-                # If the title is explicitly mentioned in the query
                 if title in query_clean:
                     logger.info(f"Local Match Found! (Problem Recognized: {title})")
                     return item
-            
-            # Catch standalone titles (e.g., "Reverse Linked List")
+
             elif len(q_text) < 50 and q_text in query_clean:
-                 logger.info(f"Local Match Found! (Standalone Title: {q_text})")
-                 return item
+                logger.info(f"Local Match Found! (Standalone Title: {q_text})")
+                return item
 
         # 2. Substring fallback (Fast)
         for item in self.data:
@@ -142,3 +168,4 @@ class KnowledgeBase:
         }
         self.data.append(new_entry)
         self.save()
+        self._build_index()  # keep RAG + title index in sync

@@ -61,3 +61,8 @@ interview_latex/
 interview_prep/
 interview_logs/
 prompts/
+/workspace
+/.agents
+/.claude
+/.github
+/.agentmap

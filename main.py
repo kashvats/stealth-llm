@@ -14,7 +14,7 @@ import re
 
 from stealth_overlay_buttons import StealthOverlayButtons
 from clipboard_monitor import ClipboardMonitor
-from llm_client import OllamaClient, OpenAIClient, MockLLMClient
+from llm_client import OllamaClient, OpenAIClient, MockLLMClient, LlamaCppClient
 from audio_transcriber import AudioTranscriber
 from lock_manager import LockManager, LockState
 from hotkey_listener import GlobalHotkeyListener
@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 class StealthPilotApp:
     def __init__(self):
         self.root = tk.Tk()
+        self._config_lock = threading.Lock()
         
         # Lock Manager
         self.lock_manager = LockManager(on_state_change=self._handle_lock_change)
@@ -36,9 +37,16 @@ class StealthPilotApp:
         self.kb = KnowledgeBase("dsa.json")
         
         # Clients
-        local_model = os.getenv("OLLAMA_MODEL", "llama3.2")
-        self.ollama_client = OllamaClient(model=local_model)
-        self.current_client = self.ollama_client
+        local_provider = os.getenv("LLM_PROVIDER", "ollama").lower()
+        if local_provider in ("llamacpp", "llama.cpp", "llama_cpp"):
+            self.local_client = LlamaCppClient()
+            self.local_name = "llama.cpp"
+        else:
+            local_model = os.getenv("OLLAMA_MODEL", "llama3.2")
+            self.local_client = OllamaClient(model=local_model)
+            self.local_name = "Ollama"
+        self.ollama_client = self.local_client
+        self.current_client = self.local_client
         
         # UI
         self.overlay = StealthOverlayButtons(
@@ -122,40 +130,41 @@ class StealthPilotApp:
             self.handle_question(text)
 
     def _load_config(self):
-        default_config = {
-            "language": "Python",
-            "color_theme": "Green",
-            "llm_mode": "cloud"
-        }
+        with self._config_lock:
+            default_config = {
+                "language": "Python",
+                "color_theme": "Green",
+                "llm_mode": "cloud"
+            }
 
-        try:
-            if os.path.exists("config.json"):
-                with open("config.json", "r") as f:
-                    cfg = json.load(f)
-                self.language = cfg.get("language", default_config["language"])
-                self.current_color = cfg.get("color_theme", default_config["color_theme"])
-                self.is_online = (cfg.get("llm_mode", default_config["llm_mode"]) == "cloud")
-                logger.info(f"Config loaded from file: Lang={self.language}, Color={self.current_color}, Online={self.is_online}")
-            else:
-                logger.info("Config file not found, using defaults")
+            try:
+                if os.path.exists("config.json"):
+                    with open("config.json", "r") as f:
+                        cfg = json.load(f)
+                    self.language = cfg.get("language", default_config["language"])
+                    self.current_color = cfg.get("color_theme", default_config["color_theme"])
+                    self.is_online = (cfg.get("llm_mode", default_config["llm_mode"]) == "cloud")
+                    logger.info(f"Config loaded from file: Lang={self.language}, Color={self.current_color}, Online={self.is_online}")
+                else:
+                    logger.info("Config file not found, using defaults")
+                    self.language = default_config["language"]
+                    self.current_color = default_config["color_theme"]
+                    self.is_online = (default_config["llm_mode"] == "cloud")
+            except json.JSONDecodeError as e:
+                logger.error(f"Corrupt config.json: {e}. Using defaults.")
                 self.language = default_config["language"]
                 self.current_color = default_config["color_theme"]
                 self.is_online = (default_config["llm_mode"] == "cloud")
-        except json.JSONDecodeError as e:
-            logger.error(f"Corrupt config.json: {e}. Using defaults.")
-            self.language = default_config["language"]
-            self.current_color = default_config["color_theme"]
-            self.is_online = (default_config["llm_mode"] == "cloud")
-        except IOError as e:
-            logger.error(f"Cannot read config.json: {e}. Using defaults.")
-            self.language = default_config["language"]
-            self.current_color = default_config["color_theme"]
-            self.is_online = (default_config["llm_mode"] == "cloud")
-        except Exception as e:
-            logger.error(f"Unexpected error loading config: {type(e).__name__}: {e}. Using defaults.")
-            self.language = default_config["language"]
-            self.current_color = default_config["color_theme"]
-            self.is_online = (default_config["llm_mode"] == "cloud")
+            except IOError as e:
+                logger.error(f"Cannot read config.json: {e}. Using defaults.")
+                self.language = default_config["language"]
+                self.current_color = default_config["color_theme"]
+                self.is_online = (default_config["llm_mode"] == "cloud")
+            except Exception as e:
+                logger.error(f"Unexpected error loading config: {type(e).__name__}: {e}. Using defaults.")
+                self.language = default_config["language"]
+                self.current_color = default_config["color_theme"]
+                self.is_online = (default_config["llm_mode"] == "cloud")
 
         # Initialize OpenAI client if online mode
         if self.is_online and not hasattr(self, "openai_client"):
@@ -166,20 +175,21 @@ class StealthPilotApp:
                 )
                 self.current_client = self.openai_client
             except Exception as e:
-                logger.warning(f"Failed to initialize OpenAI client: {e}. Falling back to Ollama.")
-                self.current_client = self.ollama_client
+                logger.warning(f"Failed to initialize OpenAI client: {e}. Falling back to {getattr(self, 'local_name', 'local')}.")
+                self.current_client = self.local_client
 
     def _save_config(self):
-        try:
-            cfg = {
-                "language": self.language,
-                "color_theme": self.current_color,
-                "llm_mode": "cloud" if self.is_online else "local"
-            }
-            with open("config.json", "w") as f:
-                json.dump(cfg, f, indent=4)
-        except Exception as e:
-            logger.error(f"Failed to save config: {e}")
+        with self._config_lock:
+            try:
+                cfg = {
+                    "language": self.language,
+                    "color_theme": self.current_color,
+                    "llm_mode": "cloud" if self.is_online else "local"
+                }
+                with open("config.json", "w") as f:
+                    json.dump(cfg, f, indent=4)
+            except Exception as e:
+                logger.error(f"Failed to save config: {e}")
 
     def _delayed_sync(self):
         """Syncs UI after a short delay to ensure overlay is ready."""
@@ -301,7 +311,7 @@ class StealthPilotApp:
         threading.Thread(target=self._ask_llm, args=(question, mode, None, None)).start()
 
     def _ask_llm(self, question: str, mode: str = "TECH", test_input: str = None, expected_output: str = None):
-        """Worker thread for LLM requests. Handles validation if enabled."""
+        """Worker thread for LLM requests. Handles RAG context injection, web search fallback, and validation."""
         system_prompt = "You are 'The Silent Strategist', an elite AI assistant for technical interviews. "
         if mode == "DSA":
             # Inject Pattern IDs into system prompt for identification
@@ -314,6 +324,19 @@ class StealthPilotApp:
             )
         else:
             system_prompt += f"\n\nPRIMARY TARGET LANGUAGE: {self.language}. Provide all code examples, syntax, and solutions in this language."
+
+        # --- RAG: inject relevant KB context into the prompt ---
+        rag_context = self.kb.search(question, top_k=3)
+        if rag_context:
+            system_prompt += f"\n\n{rag_context}\nUse the reference material above to give a precise, complete answer. Do not copy it verbatim — adapt and explain."
+            logger.info("RAG context injected into system prompt.")
+        else:
+            # --- Web search fallback: only when RAG + KB both miss ---
+            import web_search
+            web_result = web_search.search(question)
+            if web_result:
+                system_prompt += f"\n\n## Web Search Result\n{web_result}\nUse this as supplementary context only."
+                logger.info("Web search context injected into system prompt.")
 
         # Feature Flags
         do_validate = os.getenv("ENABLE_CODE_VALIDATION", "false").lower() == "true"
@@ -329,7 +352,19 @@ class StealthPilotApp:
                 logger.warning(f"Failed to read resume: {e}")
 
         try:
-            answer = self.current_client.ask(question, system_prompt=system_prompt, history=self.history)
+            # Clear text area and stream response tokens to UI as they arrive
+            self.ui_queue.put(("stream_token", "\u200b"))  # trigger clear via update_text first
+            self.ui_queue.put("▋")  # cursor placeholder (will be replaced by first token)
+            chunks = []
+            first_token = True
+            for token in self.current_client.ask_stream(question, system_prompt=system_prompt, history=self.history):
+                chunks.append(token)
+                if first_token:
+                    self.ui_queue.put(token)  # first token: use update_text to clear "Thinking..."
+                    first_token = False
+                else:
+                    self.ui_queue.put(("stream_token", token))
+            answer = "".join(chunks)
             
             # Pattern Injection Loop
             if "PATTERN_ID:" in answer:
@@ -475,8 +510,9 @@ class StealthPilotApp:
                 self.current_client = self.openai_client
                 self.overlay.show("Switched to Online ☁️ (OpenAI)", duration=0)
             else:
-                self.current_client = self.ollama_client
-                self.overlay.show("Switched to Offline 🏠 (Ollama)", duration=0)
+                self.current_client = self.local_client
+                local_label = getattr(self, "local_name", "Local")
+                self.overlay.show(f"Switched to Offline 🏠 ({local_label})", duration=0)
             
             self.overlay.set_mode_icon(self.is_online)
             self._save_config()
@@ -546,6 +582,9 @@ class StealthPilotApp:
                 self.overlay.update_caption(text, is_final)
             elif isinstance(item, tuple) and item[0] == "volume":
                 self.overlay.update_meter(item[1])
+            elif isinstance(item, tuple) and item[0] == "stream_token":
+                # Append streaming token to the text area without clearing
+                self.overlay.append_text(item[1])
             else:
                 # Forced display for AI answers/thinking status
                 self.overlay.update_text(item, force=True)

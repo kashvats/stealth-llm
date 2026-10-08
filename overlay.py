@@ -72,10 +72,6 @@ class StealthOverlay:
         self.meter_bar = tk.Frame(self.meter_frame, bg="#00ff00", width=0, height=4)
         self.meter_bar.place(x=0, y=0)
 
-        # Language Indicator (Bottom Left)
-        self.lang_label = tk.Label(self.root, text="PY", bg="black", fg="#00ff00", font=("Arial", 8, "bold"))
-        self.lang_label.place(relx=0.0, rely=1.0, anchor='sw')
-        
         self.apply_stealth()
 
     def _start_move(self, event):
